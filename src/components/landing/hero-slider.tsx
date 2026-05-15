@@ -3,6 +3,7 @@
 import { sliderContent } from "@/data/products";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -19,24 +20,49 @@ export function HeroSlider() {
   return (
     <section className="relative overflow-hidden rounded-[40px] border border-zinc-100 bg-white shadow-xl">
       <div className="grid gap-6 p-6 sm:grid-cols-2 sm:p-10">
-        <div className="flex flex-col justify-between space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="flex flex-col justify-between space-y-6"
+        >
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05, ease: "easeOut" }}
+              className="text-xs uppercase tracking-[0.3em] text-zinc-400"
+            >
               {sliderContent[activeIndex].label}
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-tight text-zinc-900 sm:text-5xl">
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.12, ease: "easeOut" }}
+              className="mt-4 text-4xl font-semibold leading-tight text-zinc-900 sm:text-5xl"
+            >
               {sliderContent[activeIndex].title}
-            </h1>
-            <p className="mt-4 text-base text-zinc-600">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.22, ease: "easeOut" }}
+              className="mt-4 text-base text-zinc-600"
+            >
               {sliderContent[activeIndex].description}
-            </p>
+            </motion.p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.32, ease: "easeOut" }}
+            className="flex flex-wrap gap-3"
+          >
             <Button size="lg">Shop collection</Button>
             <Button variant="outline" size="lg">
               Build your kit
             </Button>
-          </div>
+          </motion.div>
           <div className="flex gap-2">
             {sliderContent.map((slide, index) => (
               <button
@@ -53,9 +79,14 @@ export function HeroSlider() {
               />
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] bg-zinc-100">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.18, ease: "easeOut" }}
+          className="relative aspect-[4/3] overflow-hidden rounded-[28px] bg-zinc-100"
+        >
           <Image
             src={sliderContent[activeIndex].image}
             alt={sliderContent[activeIndex].title}
@@ -65,7 +96,7 @@ export function HeroSlider() {
             className="object-cover transition-transform duration-700"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent" />
-        </div>
+        </motion.div>
       </div>
     </section>
   );
