@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
+import { ScrollProgress } from "@/components/animations/scroll-progress";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-white text-zinc-900 antialiased dark:bg-black dark:text-white`}
         suppressHydrationWarning
       >
+        <ScrollProgress />
         <AppProviders>{children}</AppProviders>
         <Toaster position="top-center" richColors />
       </body>
