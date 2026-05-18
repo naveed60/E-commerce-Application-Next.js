@@ -28,7 +28,7 @@ const footerLinks = {
 export function Footer() {
     return (
         <Reveal y={24} duration={0.5}>
-    <footer className="mt-12 rounded-[32px] border border-slate-800 bg-slate-900 p-10 shadow-[0_-4px_40px_rgba(0,0,0,0.18)]">
+    <footer className="mt-12 rounded-[32px] border border-slate-700 bg-slate-800 p-10 shadow-[0_-4px_40px_rgba(0,0,0,0.18)]">
             <div className="mx-auto">
                 <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
                     {/* Brand Column */}
@@ -88,7 +88,7 @@ export function Footer() {
                     </div>
                 </div>
 
-                <div className="mt-16 border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+                <div className="mt-16 border-t border-slate-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
                     <p>&copy; {new Date().getFullYear()} NextShop Inc. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="#" className="hover:text-slate-300 transition-colors">Privacy</Link>
