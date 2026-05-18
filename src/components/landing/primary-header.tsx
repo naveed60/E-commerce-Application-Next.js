@@ -502,7 +502,7 @@ function HeaderSearchBox({
 
       {showSuggestions && (
         <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
-          <ul className="max-h-72 overflow-y-auto py-1">
+          <ul className="max-h-72 overflow-y-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {filteredSuggestions.map((suggestion, index) => (
               <li key={`${suggestion}-${index}`}>
                 <button
