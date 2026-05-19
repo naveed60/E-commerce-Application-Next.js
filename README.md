@@ -11,7 +11,13 @@ NextShop is a modern ecommerce starter built with **Next.js 16 (App Router)**, *
 - **Clean UI foundation**: Tailwind v4, shared button component, cart context, session provider, and remote Unsplash imagery configured in `next.config.ts`.
 
 ### Getting started
-
+reate an XLSX file for importing Decision Metro LSD checklists.
+Use exactly this workbook format:
+Sheet name: import_rows
+Row 1 must contain exactly these headers, in this exact order:
+decision_category_key
+decision_category_en
+decision_category_es
 1. **Install dependencies**
    ```bash
    npm install
