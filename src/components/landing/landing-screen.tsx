@@ -1,12 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { PrimaryHeader } from "./primary-header";
 import { HeroSlider } from "./hero-slider";
 import { ProductGrid } from "./product-grid";
 import { Footer } from "./footer";
-import { Sparkles, ShieldCheck, Truck } from "lucide-react";
-import { StaggerContainer, StaggerItem } from "@/components/animations/stagger-container";
 import { type StorefrontProduct } from "@/types/product";
 
 type LandingScreenProps = {
@@ -15,7 +13,7 @@ type LandingScreenProps = {
 
 export function LandingScreen({ products }: LandingScreenProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const productGridRef = useRef<HTMLDivElement | null>(null);
+  const [searchResultsVisible, setSearchResultsVisible] = useState(false);
   const searchSuggestions = useMemo(
     () =>
       Array.from(
@@ -25,75 +23,86 @@ export function LandingScreen({ products }: LandingScreenProps) {
   );
   const handleSearchSubmit = (query: string) => {
     setSearchTerm(query);
-    productGridRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    setSearchResultsVisible(true);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50/60 pb-20">
-      <div className="mx-auto max-w-6xl px-4 pb-16">
-        <PrimaryHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onSearchSubmit={handleSearchSubmit}
-          searchSuggestions={searchSuggestions}
-        />
-        <div className="mt-6">
-          <HeroSlider />
-        </div>
-        <StaggerContainer className="mt-12 grid gap-4 sm:grid-cols-3">
-          <StaggerItem>
-            <FeatureCard
-              icon={<Sparkles className="h-5 w-5" />}
-              iconBg="bg-violet-50 text-violet-600"
-              heading="Hand curated"
-              text="Every drop is edited by our design team and tested by the community."
-            />
-          </StaggerItem>
-          <StaggerItem>
-            <FeatureCard
-              icon={<ShieldCheck className="h-5 w-5" />}
-              iconBg="bg-blue-50 text-blue-600"
-              heading="Secure checkout"
-              text="NextAuth powered authentication and encrypted payments out of the box."
-            />
-          </StaggerItem>
-          <StaggerItem>
-            <FeatureCard
-              icon={<Truck className="h-5 w-5" />}
-              iconBg="bg-emerald-50 text-emerald-600"
-              heading="Express delivery"
-              text="Global shipping in 48h with adaptive tracking updates."
-            />
-          </StaggerItem>
-        </StaggerContainer>
-        <div ref={productGridRef} id="search-results">
-          <ProductGrid products={products} searchTerm={searchTerm} />
-        </div>
-      
-        <Footer />
+    <div className="min-h-screen bg-white">
+      <PrimaryHeader
+        searchTerm={searchTerm}
+        onSearchChange={(v) => {
+          setSearchTerm(v);
+          if (!v) setSearchResultsVisible(false);
+        }}
+        onSearchSubmit={handleSearchSubmit}
+        searchSuggestions={searchSuggestions}
+      />
+
+      <HeroSlider />
+
+      <div className="mx-auto" style={{ maxWidth: "1500px" }}>
+        <PolicyCards />
+
+        {searchResultsVisible ? (
+          <div ref={(el) => el?.scrollIntoView({ behavior: "smooth" })}>
+            <ProductGrid products={products} searchTerm={searchTerm} />
+          </div>
+        ) : (
+          <ProductGrid products={products} searchTerm="" />
+        )}
+
       </div>
+
+      <Footer />
     </div>
   );
 }
 
-type FeatureCardProps = {
-  icon: ReactNode;
-  heading: string;
-  text: string;
-  iconBg?: string;
-};
+function PolicyCards() {
+  const policies = [
+    {
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z"/>
+        </svg>
+      ),
+      title: "Eco-Friendly Materials",
+      desc: "We craft our furniture using responsibly sourced materials that minimize environmental impact.",
+    },
+    {
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+      ),
+      title: "Effortless Assembly",
+      desc: "Thoughtfully designed for quick setup with easy-to-follow instructions included.",
+    },
+    {
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      ),
+      title: "Giving Back to Nature",
+      desc: "Every purchase contributes to reforestation efforts and sustainable forestry initiatives.",
+    },
+    {
+      icon: (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2a10 10 0 1 0 10 10"/>
+          <path d="M12 12 17 7"/>
+          <path d="M12 12 7 12"/>
+        </svg>
+      ),
+      title: "Sustainable Production",
+      desc: "Dedicated to reducing waste through responsible manufacturing and eco-friendly packaging.",
+    },
+  ];
 
-function FeatureCard({ icon, heading, text, iconBg = "bg-zinc-100 text-zinc-600" }: FeatureCardProps) {
-  return (
-    <div className="rounded-[28px] border border-violet-100/70 bg-white p-6 shadow-md shadow-violet-100/30">
-      <div className={`mb-4 inline-flex items-center justify-center rounded-2xl p-3 ${iconBg}`}>
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold text-zinc-900">{heading}</h3>
-      <p className="mt-2 text-sm text-zinc-500">{text}</p>
-    </div>
-  );
+  
 }
