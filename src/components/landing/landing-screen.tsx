@@ -41,8 +41,6 @@ export function LandingScreen({ products }: LandingScreenProps) {
       <HeroSlider />
 
       <div className="mx-auto" style={{ maxWidth: "1500px" }}>
-        <PolicyCards />
-
         {searchResultsVisible ? (
           <div ref={(el) => el?.scrollIntoView({ behavior: "smooth" })}>
             <ProductGrid products={products} searchTerm={searchTerm} />
@@ -104,5 +102,19 @@ function PolicyCards() {
     },
   ];
 
-  
+  return (
+    <section className="pb-20 pt-10" style={{ paddingBottom: "60px", paddingTop: "40px" }}>
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        {policies.map((policy) => (
+          <div key={policy.title} className="text-center sm:text-left">
+            <div className="mx-auto mb-5 flex h-[70px] w-[70px] items-center justify-center rounded-full bg-[#f5f5f5] text-[#181818] sm:mx-0">
+              {policy.icon}
+            </div>
+            <h3 className="mb-1 text-[1.6rem] font-bold text-[#181818]">{policy.title}</h3>
+            <p className="mt-1.5 max-w-[500px] text-[1.4rem] leading-relaxed text-[#535353]">{policy.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
