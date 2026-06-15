@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, Heart, ShoppingBag, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { getValidImageUrl } from "@/lib/utils";
 import { type StorefrontProduct } from "@/types/product";
 
@@ -14,14 +13,6 @@ type StorefrontProductCardProps = {
   onAddToCart: () => void;
   onView?: (product: StorefrontProduct) => void;
 };
-
-const SWATCH_CLASSES = [
-  "bg-zinc-800",
-  "bg-rose-100",
-  "bg-slate-300",
-  "bg-indigo-200",
-  "bg-amber-100",
-];
 
 function formatCardPrice(amount: number) {
   return `Rs.${new Intl.NumberFormat("en-PK").format(Math.round(amount))}`;
@@ -37,10 +28,13 @@ function getComparePrice(price: number, promoPercent: number) {
   return Math.max(price, Math.round(price * multiplier));
 }
 
-function getEyebrow(product: StorefrontProduct) {
-  if (product.featured) return "Featured";
-  return "Curated";
-}
+const SWATCH_CLASSES = [
+  "bg-zinc-800",
+  "bg-rose-100",
+  "bg-slate-300",
+  "bg-indigo-200",
+  "bg-amber-100",
+];
 
 export function StorefrontProductCard({
   product,
@@ -54,33 +48,37 @@ export function StorefrontProductCard({
   const swatches = SWATCH_CLASSES.slice(0, Math.max(3, Math.min(4, product.tags.length + 1)));
 
   return (
-    <article className="group flex h-full flex-col rounded-[24px] border border-[#ead8ff] bg-white p-3 shadow-[0_12px_36px_rgba(68,25,112,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(68,25,112,0.12)]">
-      <div className="relative overflow-hidden rounded-[20px] border border-zinc-300 bg-[#faf7ff]">
-        <Link href={`/nextshop/products/${product.id}`} className="relative block aspect-[1/1]">
+    <article className="group relative bg-white transition-shadow hover:shadow-lg">
+      <div className="relative overflow-hidden bg-[#f9f9f9]" style={{ paddingTop: "124%" }}>
+        <Link href={`/nextshop/products/${product.id}`} className="absolute inset-0">
           {getValidImageUrl(product.image) ? (
             <Image
               src={product.image}
               alt={product.name}
               fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover transition duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full items-center justify-center px-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            <div className="flex h-full items-center justify-center px-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-zinc-300">
               Image unavailable
             </div>
           )}
         </Link>
-        <span className="absolute left-4 top-4 z-10 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-emerald-500 shadow-sm">
-          {getEyebrow(product)}
-        </span>
-        <div className="pointer-events-none absolute right-3 top-3 z-10 flex translate-x-2 flex-col gap-2 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-x-0 group-focus-within:opacity-100">
+
+        {product.featured && (
+          <span style={{ backgroundColor: "#e85b40" }} className="absolute left-0 top-0 z-10 px-3 py-1 text-xs font-semibold text-white">
+            Sale
+          </span>
+        )}
+
+        <div className="absolute right-3 top-3 z-10 flex flex-col gap-2 opacity-0 transition-opacity group-hover:opacity-100">
           {onView && (
             <button
               type="button"
-              aria-label="Quick view product"
+              aria-label="Quick view"
               onClick={() => onView(product)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-[0_10px_22px_rgba(15,23,42,0.16)] transition hover:scale-105"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition hover:bg-[#fdc402] hover:text-black"
             >
               <Eye className="h-4 w-4" />
             </button>
@@ -89,70 +87,47 @@ export function StorefrontProductCard({
             type="button"
             aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
             onClick={() => onToggleFavorite(product)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-[0_10px_22px_rgba(15,23,42,0.16)] transition hover:scale-105"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition hover:bg-[#fdc402] hover:text-black"
           >
-            <Heart
-              className={`h-4 w-4 transition ${isFavorite ? "fill-[#c9162b] text-[#c9162b]" : ""}`}
-            />
+            <Heart className={`h-4 w-4 ${isFavorite ? "fill-[#e85b40] text-[#e85b40]" : ""}`} />
           </button>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 translate-y-full px-3 pb-3 transition-transform group-hover:translate-y-0">
           <button
             type="button"
-            aria-label="Add to cart"
             onClick={onAddToCart}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-[0_10px_22px_rgba(15,23,42,0.16)] transition hover:scale-105"
+            className="flex w-full items-center justify-center gap-2 bg-white py-3 text-sm font-bold uppercase tracking-wide text-[#181818] transition hover:bg-[#fdc402] hover:text-black"
           >
             <ShoppingBag className="h-4 w-4" />
+            Add to cart
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col px-2 pb-2 pt-4">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <h3 className="text-[1.65rem] font-semibold leading-none tracking-[-0.04em] text-zinc-950">
-              {product.name}
-            </h3>
-            <p className="mt-3 line-clamp-2 min-h-12 text-base leading-6 text-zinc-500">
-              {product.description}
-            </p>
-          </div>
-          <p className="shrink-0 text-sm font-semibold tracking-[0.06em] text-[#ff4b3e]">
-            {promoPercent}% OFF
-          </p>
+      <div className="px-0 pb-5 pt-4">
+        <h3 className="mb-1 text-[1.4rem] font-bold text-[#181818] transition-colors hover:text-[#fdc402]">
+          <Link href={`/nextshop/products/${product.id}`}>{product.name}</Link>
+        </h3>
+        <p className="mb-4 line-clamp-1 text-[1.3rem] text-[#535353]">{product.description}</p>
+
+        <div className="mb-3 flex items-center gap-2">
+          {swatches.map((swatchClass, index) => (
+            <span
+              key={`${product.id}-swatch-${index}`}
+              className={`h-4 w-4 rounded-full border border-[#eaeaea] ${swatchClass}`}
+            />
+          ))}
+          {product.tags.length > 3 && (
+            <span className="text-xs text-[#535353]">+{product.tags.length - 3}</span>
+          )}
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            {swatches.map((swatchClass, index) => (
-              <span
-                key={`${product.id}-swatch-${index}`}
-                className={`h-4 w-4 rounded-full border border-white shadow-sm ${swatchClass}`}
-              />
-            ))}
-            {product.tags.length > 3 && (
-              <span className="text-sm font-semibold text-zinc-900">+{product.tags.length - 3}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 text-base font-semibold text-zinc-950">
-            <Star className="h-4 w-4 fill-[#ffb200] text-[#ffb200]" />
-            {product.rating.toFixed(1)}
-          </div>
-        </div>
-
-        <div className="mt-auto">
-          <p className=" text-zinc-400 line-through">{formatCardPrice(comparePrice)}</p>
-
-          <div className="mt-2 flex items-end justify-between gap-4">
-            <p className="text-[1.25rem] font-semibold leading-none tracking-[-0.05em] text-zinc-950">
-              {formatCardPrice(product.price)}
-            </p>
-            <Button
-              className="h-12 rounded-full bg-[#3b82f6] px-6 text-base font-semibold text-white shadow-[0_12px_28px_rgba(59,130,246,0.22)] hover:bg-[#2563eb]"
-              onClick={onAddToCart}
-            >
-              Buy Now
-            </Button>
-          </div>
+        <div className="flex items-center gap-3">
+          {promoPercent > 0 && (
+            <span className="text-[1.3rem] text-[#b5b5b5] line-through">{formatCardPrice(comparePrice)}</span>
+          )}
+          <span className="text-[1.5rem] font-bold text-[#181818]">{formatCardPrice(product.price)}</span>
         </div>
       </div>
     </article>
