@@ -1,11 +1,13 @@
 export default function AdminOrdersPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div>
-        <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
+        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--admin-text-muted)]">
           Order intelligence
         </p>
-        <h1 className="text-3xl font-semibold text-zinc-900">Orders</h1>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--admin-text)]">
+          Orders
+        </h1>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {[
@@ -15,19 +17,19 @@ export default function AdminOrdersPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-3xl border border-zinc-100 bg-white p-4 text-sm text-zinc-500 shadow"
+            className="rounded-[28px] border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-5 text-sm text-[var(--admin-text-soft)] shadow-[var(--admin-shadow)]"
           >
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--admin-text-muted)]">
               {stat.label}
             </p>
-            <p className={`mt-2 text-2xl font-semibold text-zinc-900 ${stat.tone}`}>
+            <p className={`mt-3 text-2xl font-semibold tracking-tight text-[var(--admin-text)] ${stat.tone}`}>
               {stat.value}
             </p>
           </div>
         ))}
       </div>
-      <div className="rounded-3xl border border-zinc-100 bg-white p-6 shadow-lg">
-        <p className="text-sm text-zinc-500">
+      <div className="rounded-[28px] border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-6 shadow-[var(--admin-shadow)]">
+        <p className="text-sm text-[var(--admin-text-soft)]">
           The order table integration is coming Soon. For now, review the
           operational summaries above, and head back to the overview for
           live order insights.
