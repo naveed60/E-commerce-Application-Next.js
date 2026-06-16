@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
@@ -14,6 +15,8 @@ export default async function AdminLayout({
 }: {
   children: ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const adminTheme = cookieStore.get("nextshop-admin-theme")?.value === "dark" ? "dark" : "light";
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== "ADMIN") {
     redirect("/login");
@@ -26,6 +29,7 @@ export default async function AdminLayout({
         email: session.user?.email ?? null,
         role: session.user?.role ?? "ADMIN",
       }}
+      initialTheme={adminTheme}
     >
       {children}
     </AdminShell>
