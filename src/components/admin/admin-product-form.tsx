@@ -48,6 +48,14 @@ const defaultFormState: ProductFormState = {
   featured: false,
 };
 
+const adminPageHeaderClass = "text-xs font-semibold uppercase tracking-[0.32em] text-[var(--admin-text-muted)]";
+const adminCardClass =
+  "relative rounded-[28px] border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] p-6 shadow-[var(--admin-shadow)]";
+const adminLabelClass = "space-y-1 text-sm font-medium text-[var(--admin-text-soft)]";
+const adminFieldClass =
+  "w-full rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-bg-soft)] px-4 py-3 text-sm text-[var(--admin-text)] outline-none transition placeholder:text-[var(--admin-text-muted)] focus:border-[var(--admin-border-strong)] focus:ring-2 focus:ring-[var(--admin-ring)]";
+const adminTextAreaClass = `${adminFieldClass} min-h-[120px]`;
+
 function buildInitialState(initialData?: AdminProductFormInitialData): ProductFormState {
   if (!initialData) {
     return defaultFormState;
@@ -137,9 +145,9 @@ export function AdminProductForm({
   };
 
   return (
-    <div className="relative rounded-3xl border border-zinc-100 bg-white p-6 shadow-lg">
+    <div className={adminCardClass}>
       {submittingProduct && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-white/70 backdrop-blur-[1px]">
+        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[28px] bg-[color-mix(in_srgb,var(--admin-bg-elevated)_72%,transparent)] backdrop-blur-[2px]">
           <PyramidLoader
             size="md"
             label={mode === "edit" ? "Updating product..." : "Saving product..."}
@@ -148,10 +156,15 @@ export function AdminProductForm({
       )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">Product catalog</p>
-          <h2 className="text-xl font-semibold text-zinc-900">{formTitle}</h2>
+          <p className={adminPageHeaderClass}>Product catalog</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--admin-text)]">{formTitle}</h2>
         </div>
-        <Button variant="outline" size="sm" onClick={handleClear}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleClear}
+          className="border-[var(--admin-border)] bg-[var(--admin-bg-soft)] text-[var(--admin-text)] hover:bg-[var(--admin-bg-elevated)]"
+        >
           Clear
         </Button>
       </div>
@@ -223,7 +236,7 @@ export function AdminProductForm({
         />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-zinc-600">
+          <label className={adminLabelClass}>
             Name
             <input
               type="text"
@@ -235,10 +248,10 @@ export function AdminProductForm({
                   name: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+              className={adminFieldClass}
             />
           </label>
-          <label className="space-y-1 text-sm font-medium text-zinc-600">
+          <label className={adminLabelClass}>
             Price
             <input
               type="number"
@@ -252,12 +265,12 @@ export function AdminProductForm({
                   price: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+              className={adminFieldClass}
             />
           </label>
         </div>
 
-        <label className="space-y-1 text-sm font-medium text-zinc-600">
+        <label className={adminLabelClass}>
           Category <span className="text-rose-500">*</span>
           <select
             required
@@ -268,7 +281,7 @@ export function AdminProductForm({
                 category: event.target.value,
               }))
             }
-            className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+            className={adminFieldClass}
           >
             <option value="" disabled>
               Select a category...
@@ -281,7 +294,7 @@ export function AdminProductForm({
           </select>
         </label>
 
-        <label className="space-y-1 text-sm font-medium text-zinc-600">
+        <label className={adminLabelClass}>
           Description
           <textarea
             required
@@ -293,12 +306,12 @@ export function AdminProductForm({
                 description: event.target.value,
               }))
             }
-            className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+            className={adminTextAreaClass}
           />
         </label>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-zinc-600">
+          <label className={adminLabelClass}>
             Image URL
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">
@@ -312,12 +325,12 @@ export function AdminProductForm({
                       image: event.target.value,
                     }))
                   }
-                  className="flex-1 rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+                  className="flex-1 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-bg-soft)] px-4 py-3 text-sm text-[var(--admin-text)] outline-none transition placeholder:text-[var(--admin-text-muted)] focus:border-[var(--admin-border-strong)] focus:ring-2 focus:ring-[var(--admin-ring)]"
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-[var(--admin-text)] hover:bg-[var(--admin-bg-soft)]"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
                 >
@@ -337,7 +350,7 @@ export function AdminProductForm({
             </div>
           </label>
 
-          <label className="space-y-1 text-sm font-medium text-zinc-600">
+          <label className={adminLabelClass}>
             Inventory
             <input
               type="number"
@@ -350,12 +363,12 @@ export function AdminProductForm({
                   inventory: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+              className={adminFieldClass}
             />
           </label>
         </div>
 
-        <label className="space-y-1 text-sm font-medium text-zinc-600">
+        <label className={adminLabelClass}>
           Tags (comma separated)
           <input
             type="text"
@@ -366,12 +379,12 @@ export function AdminProductForm({
                 tags: event.target.value,
               }))
             }
-            className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+            className={adminFieldClass}
           />
         </label>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-1 text-sm font-medium text-zinc-600">
+          <label className={adminLabelClass}>
             Rating
             <input
               type="number"
@@ -386,11 +399,11 @@ export function AdminProductForm({
                   rating: event.target.value,
                 }))
               }
-              className="w-full rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-500"
+              className={adminFieldClass}
             />
           </label>
 
-          <label className="flex items-center gap-2 text-sm font-medium text-zinc-600">
+          <label className="flex items-center gap-2 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-bg-soft)] px-4 py-3 text-sm font-medium text-[var(--admin-text-soft)]">
             <input
               type="checkbox"
               checked={productForm.featured}
@@ -400,14 +413,18 @@ export function AdminProductForm({
                   featured: event.target.checked,
                 }))
               }
-              className="h-4 w-4 rounded border border-zinc-200 text-[oklch(0.58_0.15_256.18)] focus:ring-[oklch(0.58_0.15_256.18)]"
+              className="h-4 w-4 rounded border border-[var(--admin-border)] accent-[var(--admin-accent)]"
             />
             Featured
           </label>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit" disabled={submittingProduct} className="min-w-32">
+          <Button
+            type="submit"
+            disabled={submittingProduct}
+            className="min-w-32 bg-[var(--admin-accent)] text-white shadow-[0_10px_24px_var(--admin-ring)] hover:bg-[var(--admin-accent-strong)]"
+          >
             {submittingProduct
               ? (
                 <span className="inline-flex items-center gap-2">
@@ -422,6 +439,7 @@ export function AdminProductForm({
           <Button
             type="button"
             variant="ghost"
+            className="bg-transparent text-[var(--admin-text)] hover:bg-[var(--admin-bg-soft)]"
             onClick={() => router.push("/nextshop/admin/products")}
           >
             Cancel
