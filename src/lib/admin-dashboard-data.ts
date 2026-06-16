@@ -1,11 +1,39 @@
 import { prisma } from "@/lib/prisma";
 
+export type DashboardTrendPoint = {
+  label: string;
+  pageViews: number;
+  sessions: number;
+};
+
+export type DashboardDeviceBreakdown = {
+  label: string;
+  value: number;
+  color: "indigo" | "emerald" | "amber";
+};
+
+export type DashboardLead = {
+  name: string;
+  company: string;
+  email: string;
+  stage: "New lead" | "Qualified" | "Proposal" | "Closed";
+  budget: string;
+};
+
 export type DashboardData = {
   stats: {
     label: string;
     value: string;
     change: string;
+    trend: "up" | "down";
+    tone: "green" | "cyan" | "orange" | "indigo";
+    sparkline: number[];
   }[];
+  chart: {
+    range: "7d" | "30d" | "90d";
+    series: DashboardTrendPoint[];
+    deviceBreakdown: DashboardDeviceBreakdown[];
+  };
   orders: {
     id: string;
     customer: string;
@@ -18,6 +46,7 @@ export type DashboardData = {
     description: string;
     action: string;
   }[];
+  leads: DashboardLead[];
   products: {
     id: string;
     name: string;
@@ -33,20 +62,49 @@ export type DashboardData = {
   }[];
 };
 
+const chartSeries: DashboardTrendPoint[] = [
+  { label: "Jan", pageViews: 132, sessions: 92 },
+  { label: "Feb", pageViews: 72, sessions: 70 },
+  { label: "Mar", pageViews: 110, sessions: 77 },
+  { label: "Apr", pageViews: 100, sessions: 48 },
+  { label: "May", pageViews: 138, sessions: 36 },
+  { label: "Jun", pageViews: 128, sessions: 70 },
+  { label: "Jul", pageViews: 78, sessions: 70 },
+  { label: "Aug", pageViews: 82, sessions: 70 },
+  { label: "Sep", pageViews: 160, sessions: 86 },
+  { label: "Oct", pageViews: 76, sessions: 40 },
+  { label: "Nov", pageViews: 76, sessions: 53 },
+  { label: "Dec", pageViews: 111, sessions: 54 },
+];
+
+const deviceBreakdown: DashboardDeviceBreakdown[] = [
+  { label: "Desktop", value: 45.8, color: "indigo" },
+  { label: "Mobile", value: 38.7, color: "emerald" },
+  { label: "Tablet", value: 15.5, color: "amber" },
+];
+
+const fallbackLeads: DashboardLead[] = [];
+
+function formatCount(value: number): string {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatPkr(amount: number): string {
+  return `PKR ${new Intl.NumberFormat("en-PK").format(Math.round(amount))}`;
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   try {
     const [
       userCount,
       productCount,
       orderCount,
-      revenue,
       latestOrders,
       latestProducts,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.product.count(),
       prisma.order.count(),
-      prisma.order.aggregate({ _sum: { total: true } }),
       prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: "desc" },
@@ -58,33 +116,49 @@ export async function getDashboardData(): Promise<DashboardData> {
       }),
     ]);
 
-    const grossRevenue = revenue._sum.total
-      ? revenue._sum.total.toNumber()
-      : 0;
+    const conversionRate =
+      userCount > 0 ? ((orderCount / userCount) * 100).toFixed(1) : "0.0";
 
     return {
       stats: [
         {
-          label: "Active customers",
-          value: userCount.toString(),
-          change: "+12.6% vs last month",
+          label: "Total Users",
+          value: formatCount(userCount),
+          change: "+12.5% from last month",
+          trend: "up",
+          tone: "green",
+          sparkline: [16, 18, 19, 22, 24, 27, 26, 29],
         },
         {
-          label: "Shippable products",
-          value: productCount.toString(),
-          change: "8 new arrivals",
+          label: "Total Views",
+          value: "0",
+          change: "+8.2% from last week",
+          trend: "up",
+          tone: "cyan",
+          sparkline: [8, 12, 10, 14, 16, 18, 20, 21],
         },
         {
-          label: "Orders processed",
-          value: orderCount.toString(),
-          change: "98% fulfillment rate",
+          label: "Published Products",
+          value: formatCount(productCount),
+          change: "-2.1% from yesterday",
+          trend: "down",
+          tone: "orange",
+          sparkline: [22, 18, 20, 17, 15, 16, 14, 13],
         },
         {
-          label: "Gross revenue",
-          value: `$${grossRevenue.toLocaleString()}`,
-          change: "+18.4% vs forecast",
+          label: "Conversion Rate",
+          value: `${conversionRate}%`,
+          change: "+0.3% from last month",
+          trend: "up",
+          tone: "indigo",
+          sparkline: [4, 5, 4, 6, 7, 6, 8, 7],
         },
       ],
+      chart: {
+        range: "30d",
+        series: chartSeries,
+        deviceBreakdown,
+      },
       orders: latestOrders.map((order) => ({
         id: order.id.slice(0, 8).toUpperCase(),
         customer: order.user?.name ?? order.user?.email ?? "Guest",
@@ -95,19 +169,20 @@ export async function getDashboardData(): Promise<DashboardData> {
       highlights: [
         {
           title: "New waitlist signups",
-          description: "542 members ready for the August capsule.",
+          description: "542 members ready for the next capsule drop.",
           action: "Invite customers",
         },
         {
           title: "Low inventory alert",
-          description: "3 hero products below the 15 unit threshold.",
+          description: "3 hero products are below the 15 unit threshold.",
           action: "Restock inventory",
         },
       ],
+      leads: fallbackLeads,
       products: latestProducts.map((product) => ({
         id: product.id,
         name: product.name,
-        priceLabel: `PKR ${new Intl.NumberFormat("en-PK").format(Math.round(product.price.toNumber()))}`,
+        priceLabel: formatPkr(product.price.toNumber()),
         priceValue: product.price.toNumber(),
         featured: product.featured,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,26 +199,43 @@ export async function getDashboardData(): Promise<DashboardData> {
     return {
       stats: [
         {
-          label: "Active customers",
-          value: "1,482",
-          change: "+12.6% vs last month",
+          label: "Total Users",
+          value: "2",
+          change: "+12.5% from last month",
+          trend: "up",
+          tone: "green",
+          sparkline: [16, 18, 19, 22, 24, 27, 26, 29],
         },
         {
-          label: "Shippable products",
-          value: "86",
-          change: "8 new arrivals",
+          label: "Total Views",
+          value: "0",
+          change: "+8.2% from last week",
+          trend: "up",
+          tone: "cyan",
+          sparkline: [8, 12, 10, 14, 16, 18, 20, 21],
         },
         {
-          label: "Orders processed",
-          value: "312",
-          change: "98% fulfillment rate",
+          label: "Published Products",
+          value: "1",
+          change: "-2.1% from yesterday",
+          trend: "down",
+          tone: "orange",
+          sparkline: [22, 18, 20, 17, 15, 16, 14, 13],
         },
         {
-          label: "Gross revenue",
-          value: "$128,450",
-          change: "+18.4% vs forecast",
+          label: "Conversion Rate",
+          value: "0%",
+          change: "+0.3% from last month",
+          trend: "up",
+          tone: "indigo",
+          sparkline: [4, 5, 4, 6, 7, 6, 8, 7],
         },
       ],
+      chart: {
+        range: "30d",
+        series: chartSeries,
+        deviceBreakdown,
+      },
       orders: [
         {
           id: "XSA9132",
@@ -170,15 +262,16 @@ export async function getDashboardData(): Promise<DashboardData> {
       highlights: [
         {
           title: "New waitlist signups",
-          description: "542 members ready for the August capsule.",
+          description: "542 members ready for the next capsule drop.",
           action: "Invite customers",
         },
         {
           title: "Low inventory alert",
-          description: "3 hero products below the 15 unit threshold.",
+          description: "3 hero products are below the 15 unit threshold.",
           action: "Restock inventory",
         },
       ],
+      leads: fallbackLeads,
       products: [
         {
           id: "aurora",
