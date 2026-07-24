@@ -12,12 +12,10 @@ export function PyramidLoader({
   return (
     <div className={`pyramid-loader-root ${className}`.trim()}>
       <div className={`pyramid-loader pyramid-loader--${size}`} aria-hidden="true">
-        <div className="pyramid-loader__wrapper">
-          <span className="pyramid-loader__side pyramid-loader__side1" />
-          <span className="pyramid-loader__side pyramid-loader__side2" />
-          <span className="pyramid-loader__side pyramid-loader__side3" />
-          <span className="pyramid-loader__side pyramid-loader__side4" />
-          <span className="pyramid-loader__shadow" />
+        <div className="pyramid-loader__spinner">
+          {Array.from({ length: 12 }, (_, index) => (
+            <span key={index} className="pyramid-loader__bar" />
+          ))}
         </div>
       </div>
       {label ? (
