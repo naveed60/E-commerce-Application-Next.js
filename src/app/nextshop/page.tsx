@@ -4,10 +4,17 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function NextShopPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const products = await (prisma.product.findMany as any)({
-    orderBy: { createdAt: "desc" },
-  });
+  let products: Awaited<ReturnType<typeof prisma.product.findMany>> = [];
+  let databaseUnavailable = false;
+
+  try {
+    products = await prisma.product.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    databaseUnavailable = true;
+    console.error("[storefront] Unable to load products from the database.", error);
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const serializedProducts = products.map((product: any) => ({
@@ -23,5 +30,10 @@ export default async function NextShopPage() {
     createdAt: product.createdAt.toISOString(),
   }));
 
-  return <LandingScreen products={serializedProducts} />;
+  return (
+    <LandingScreen
+      products={serializedProducts}
+      databaseUnavailable={databaseUnavailable}
+    />
+  );
 }

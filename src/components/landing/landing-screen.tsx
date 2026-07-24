@@ -9,9 +9,13 @@ import { type StorefrontProduct } from "@/types/product";
 
 type LandingScreenProps = {
   products: StorefrontProduct[];
+  databaseUnavailable?: boolean;
 };
 
-export function LandingScreen({ products }: LandingScreenProps) {
+export function LandingScreen({
+  products,
+  databaseUnavailable = false,
+}: LandingScreenProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResultsVisible, setSearchResultsVisible] = useState(false);
   const searchSuggestions = useMemo(
@@ -41,6 +45,14 @@ export function LandingScreen({ products }: LandingScreenProps) {
       <HeroSlider />
 
       <div className="mx-auto" style={{ maxWidth: "1500px" }}>
+        {databaseUnavailable && (
+          <p
+            className="mx-4 mt-6 border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900"
+            role="status"
+          >
+            Products are temporarily unavailable. Please try again shortly.
+          </p>
+        )}
         {searchResultsVisible ? (
           <div ref={(el) => el?.scrollIntoView({ behavior: "smooth" })}>
             <ProductGrid products={products} searchTerm={searchTerm} />

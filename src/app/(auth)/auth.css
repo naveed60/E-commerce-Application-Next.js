@@ -38,7 +38,7 @@
 
 .auth-mobile-switch__button--active {
   color: #fff;
-  background: linear-gradient(135deg, #377ad1, #4a8adf);
+  background: #0f2e26;
 }
 
 .auth-form-panel {
@@ -102,7 +102,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #377ad1;
+  color: #0f2e26;
 }
 
 .auth-form__title {
@@ -142,9 +142,9 @@
 }
 
 .auth-field input:focus {
-  border-color: #377ad1;
+  border-color: #0f2e26;
   background: #fff;
-  box-shadow: 0 0 0 3px rgb(55 122 209 / 0.2);
+  box-shadow: 0 0 0 3px rgb(15 46 38 / 0.2);
 }
 
 .auth-field input:disabled {
@@ -207,13 +207,14 @@
 
 .auth-action--primary {
   margin-top: 8px;
-  background: linear-gradient(120deg, #377ad1, #4b8ee6);
+  background: #0f2e26;
   color: #fff;
-  box-shadow: 0 10px 22px rgb(55 122 209 / 0.28);
+  box-shadow: 0 10px 22px rgb(15 46 38 / 0.28);
 }
 
 .auth-action--primary:hover {
-  box-shadow: 0 14px 24px rgb(55 122 209 / 0.36);
+  background: #18483b;
+  box-shadow: 0 14px 24px rgb(15 46 38 / 0.36);
 }
 
 .auth-action--ghost {
@@ -260,7 +261,7 @@
 .auth-inline-link__button {
   border: none;
   background: transparent;
-  color: #377ad1;
+  color: #0f2e26;
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -294,9 +295,9 @@
   background:
     linear-gradient(
       136deg,
-      rgba(15, 125, 189, 0.96) 45%,
-      rgba(15, 125, 189, 0.96) 45%,
-      rgba(56, 104, 208, 0.94) 100%
+      rgb(15 46 38 / 0.98) 45%,
+      rgb(15 46 38 / 0.98) 45%,
+      rgb(24 72 59 / 0.96) 100%
     );
   background-size: 180% 180%;
   transition:
