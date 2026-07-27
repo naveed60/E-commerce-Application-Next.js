@@ -9,17 +9,17 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-100 pb-16">
-      <div className="mx-auto max-w-6xl px-4">
-        <PrimaryHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          onSearchSubmit={setSearchTerm}
-          searchSuggestions={[]}
-        />
-        <div className="mt-10 md:mt-12">{children}</div>
-        <Footer />
-      </div>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-50 via-white to-zinc-100">
+      <PrimaryHeader
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onSearchSubmit={setSearchTerm}
+        searchSuggestions={[]}
+      />
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4">
+        <div className="mt-10 pb-12 md:mt-12">{children}</div>
+      </main>
+      <Footer />
     </div>
   );
 }

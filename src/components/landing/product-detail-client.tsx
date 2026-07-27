@@ -18,6 +18,7 @@ import { useSession } from "next-auth/react";
 import { useCart } from "@/components/providers/cart-provider";
 import { useFavorites } from "@/components/providers/favorites-provider";
 import { PrimaryHeader } from "./primary-header";
+import { Footer } from "./footer";
 import { cn, formatPrice } from "@/lib/utils";
 import { type StorefrontProduct } from "@/types/product";
 
@@ -61,13 +62,14 @@ export function ProductDetailClient({ product, related, categoryLabel, validImag
   };
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-50 via-white to-zinc-100">
       <PrimaryHeader
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchSuggestions={searchSuggestions}
       />
 
+      <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-16">
       {/* Breadcrumb */}
       <nav className="mt-6 flex items-center gap-2 text-xs text-zinc-400">
         <Link href="/nextshop" className="hover:text-zinc-700 transition">Home</Link>
@@ -340,6 +342,8 @@ export function ProductDetailClient({ product, related, categoryLabel, validImag
           </div>
         </div>
       )}
-    </>
+      </main>
+      <Footer />
+    </div>
   );
 }

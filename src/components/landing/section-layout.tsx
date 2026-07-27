@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { PrimaryHeader } from "./primary-header";
+import { Footer } from "./footer";
 
 type SectionSearchContextValue = {
   searchTerm: string;
@@ -48,20 +49,20 @@ export function SectionLayout({
 
   return (
     <SectionSearchContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-100 pb-20">
-        <div className="mx-auto max-w-6xl px-4 pb-12">
-          <PrimaryHeader
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSearchSubmit={(query) => {
-              setSearchTerm(query);
-              sectionRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-              });
-            }}
-            searchSuggestions={searchSuggestions}
-          />
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-zinc-50 via-white to-zinc-100">
+        <PrimaryHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onSearchSubmit={(query) => {
+            setSearchTerm(query);
+            sectionRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }}
+          searchSuggestions={searchSuggestions}
+        />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-12">
           <section
             ref={sectionRef}
             className="mt-10 space-y-4 rounded-[32px] border border-zinc-100 bg-white p-8 shadow-2xl"
@@ -75,7 +76,8 @@ export function SectionLayout({
             <p className="text-sm leading-6 text-zinc-500">{description}</p>
             {children ? <div className="pt-4">{children}</div> : null}
           </section>
-        </div>
+        </main>
+        <Footer />
       </div>
     </SectionSearchContext.Provider>
   );
