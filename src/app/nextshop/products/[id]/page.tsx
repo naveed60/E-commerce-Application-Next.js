@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { PrimaryHeader } from "@/components/landing/primary-header";
 import { ProductDetailClient } from "@/components/landing/product-detail-client";
 import { getValidImageUrl } from "@/lib/utils";
 
@@ -72,15 +71,11 @@ export default async function ProductDetailPage({
   const validImage = getValidImageUrl(product.image);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-zinc-100 pb-20">
-      <div className="mx-auto max-w-6xl px-4 pb-16">
-        <ProductDetailClient
-          product={product}
-          related={related}
-          categoryLabel={categoryLabel}
-          validImage={validImage}
-        />
-      </div>
-    </div>
+    <ProductDetailClient
+      product={product}
+      related={related}
+      categoryLabel={categoryLabel}
+      validImage={validImage}
+    />
   );
 }
