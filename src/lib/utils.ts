@@ -27,6 +27,15 @@ export function formatPrice(amount: number): string {
   return "PKR " + new Intl.NumberFormat("en-PK").format(Math.round(amount));
 }
 
+export function formatMinorPkr(amount: number): string {
+  return new Intl.NumberFormat("en-PK", {
+    style: "currency",
+    currency: "PKR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount / 100);
+}
+
 export function getValidImageUrl(src: string): string | null {
   if (!src) return null;
   if (src.startsWith("/")) return src;
