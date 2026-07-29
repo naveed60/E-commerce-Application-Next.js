@@ -29,9 +29,11 @@ decision_category_es
    ```
 3. **Provision the database**
    ```bash
-   npm run db:push   # applies Prisma schema to PostgreSQL
+   npm run db:push   # applies Prisma schema to the .env.local database
    npm run db:seed   # optional: inserts sample catalog + admin user
    ```
+   When your development database is configured in `.env.local`, open Prisma Studio with `npm run db:studio` so it connects to the same database as Next.js.
+   Schema changes are intentionally not run by `npm run build`; apply them explicitly before deploying.
    The seed script creates an administrator you can use immediately:
    - Email: `admin@nextshop.dev`
    - Password: `admin123`
@@ -42,6 +44,23 @@ decision_category_es
    - Landing page: [http://localhost:3000/nextshop](http://localhost:3000/nextshop)
    - Admin dashboard: [http://localhost:3000/nextshop/admin](http://localhost:3000/nextshop/admin)
    - Auth routes: `/login` and `/register`
+
+### Safepay checkout
+
+The storefront includes an authenticated, hosted Safepay checkout at `/nextshop/checkout`.
+
+1. Add the Safepay sandbox credentials, `APP_URL`, Resend credentials, and `CRON_SECRET` from `.env.example` to your local environment.
+2. Apply the commerce schema with `npm run db:push`.
+3. In Safepay Dashboard → **Developers → Endpoints**, register:
+
+   ```text
+   https://your-public-domain/api/webhooks/safepay
+   ```
+
+   Subscribe to `payment.succeeded`, `payment.failed`, `payment.refunded`, `authorization.succeeded`, and `authorization.reversed`.
+4. For local webhook testing, expose the app through a TLS tunnel and use the tunnel URL as `APP_URL`; Safepay requires a public HTTPS endpoint.
+
+The redirect back from Safepay only shows payment status. A signed `payment.succeeded` webhook is the sole action that marks an order paid and queues its confirmation email. The included Vercel cron configuration processes email retries and releases stock held by expired checkouts every five minutes. For a non-Vercel deployment, invoke `GET /api/cron/commerce` on the same schedule with `Authorization: Bearer <CRON_SECRET>`.
 
 ### Project structure
 
