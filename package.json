@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "db:push": "prisma db push",
+    "db:push": "set -a; . ./.env.local; set +a; prisma db push",
+    "db:studio": "set -a; . ./.env.local; set +a; prisma studio",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed"
   },
@@ -26,7 +27,9 @@
     "postgres": "^3.4.9",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "resend": "^6.18.1",
     "sonner": "^2.0.7",
+    "undici": "^6.28.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

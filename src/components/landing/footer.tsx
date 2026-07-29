@@ -12,9 +12,9 @@ export function Footer() {
             <Image
               src="/nextshop-logo-v2.png"
               alt="NextShop"
-              width={130}
+              width={35}
               height={35}
-              className="mb-5 h-auto"
+              className="mb-5"
             />
             <p className="mb-6 text-[12px] leading-relaxed text-white/70">
               Minicom is a premium Shopify theme designed specifically for furniture stores, interior design brands, and home decor retailers who value clean design and a seamless shopping experience.

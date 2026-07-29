@@ -18,6 +18,7 @@ type CartContextValue = {
   isOpen: boolean;
   addItem: (product: Product) => void;
   removeItem: (id: string) => void;
+  clearCart: () => void;
   toggleCart: () => void;
   closeCart: () => void;
 };
@@ -124,6 +125,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       addItem,
       removeItem,
+      clearCart: () => setItems([]),
       toggleCart: () => setIsOpen((prev) => !prev),
       closeCart: () => setIsOpen(false),
     }),

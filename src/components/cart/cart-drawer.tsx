@@ -5,10 +5,12 @@ import { cn, formatPrice } from "@/lib/utils";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function CartDrawer() {
   const { items, total, isOpen, removeItem, closeCart } = useCart();
+  const router = useRouter();
 
   return (
     <>
@@ -80,7 +82,15 @@ export function CartDrawer() {
             <span>Total</span>
             <span>{formatPrice(total)}</span>
           </div>
-          <Button variant="primary" className="mt-4 w-full" disabled={!items.length}>
+          <Button
+            variant="primary"
+            className="mt-4 w-full"
+            disabled={!items.length}
+            onClick={() => {
+              closeCart();
+              router.push("/nextshop/checkout");
+            }}
+          >
             Checkout
           </Button>
         </div>
