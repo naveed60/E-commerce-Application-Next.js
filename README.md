@@ -11,13 +11,10 @@ NextShop is a modern ecommerce starter built with **Next.js 16 (App Router)**, *
 - **Clean UI foundation**: Tailwind v4, shared button component, cart context, session provider, and remote Unsplash imagery configured in `next.config.ts`.
 
 ### Getting started
-reate an XLSX file for importing Decision Metro LSD checklists.
-Use exactly this workbook format:
-Sheet name: import_rows
-Row 1 must contain exactly these headers, in this exact order:
-decision_category_key
-decision_category_en
-decision_category_es
+
+PostgreSQL must be running before you initialize the project. Create an empty
+database named `nextshop`, or point `DATABASE_URL` at an existing empty database.
+
 1. **Install dependencies**
    ```bash
    npm install
@@ -25,14 +22,13 @@ decision_category_es
 2. **Configure environment variables**
    ```bash
    cp .env.example .env
-   # Update DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL
+   # Update DATABASE_URL, AUTH_SECRET, and the optional service credentials
    ```
 3. **Provision the database**
    ```bash
-   npm run db:push   # applies Prisma schema to the .env.local database
-   npm run db:seed   # optional: inserts sample catalog + admin user
+   npm run db:setup  # applies migrations and inserts the demo catalog/admin
    ```
-   When your development database is configured in `.env.local`, open Prisma Studio with `npm run db:studio` so it connects to the same database as Next.js.
+   When your development database is configured in `.env`, open Prisma Studio with `npm run db:studio` so it connects to the same database as Next.js.
    Schema changes are intentionally not run by `npm run build`; apply them explicitly before deploying.
    The seed script creates an administrator you can use immediately:
    - Email: `admin@nextshop.dev`
@@ -50,7 +46,7 @@ decision_category_es
 The storefront includes an authenticated, hosted Safepay checkout at `/nextshop/checkout`.
 
 1. Add the Safepay sandbox credentials, `APP_URL`, Resend credentials, and `CRON_SECRET` from `.env.example` to your local environment.
-2. Apply the commerce schema with `npm run db:push`.
+2. Apply the commerce schema with `npm run db:migrate`.
 3. In Safepay Dashboard → **Developers → Endpoints**, register:
 
    ```text
