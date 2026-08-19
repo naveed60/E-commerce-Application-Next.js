@@ -1,4 +1,9 @@
-import { PrismaClient, Role, OrderStatus } from "@prisma/client";
+import {
+  OrderStatus,
+  PaymentStatus,
+  PrismaClient,
+  Role,
+} from "@prisma/client";
 import bcrypt from "bcrypt";
 import { featuredProducts } from "@/data/products";
 
@@ -22,15 +27,8 @@ async function main() {
     },
   });
 
-  // Reset catalog
-  await prisma.cartItem.deleteMany();
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.product.deleteMany();
-
-  await prisma.product.createMany({
-    data: featuredProducts.map((product) => ({
-      id: product.id,
+  for (const product of featuredProducts) {
+    const data = {
       name: product.name,
       description: product.description,
       price: product.price,
@@ -38,25 +36,62 @@ async function main() {
       tags: product.tags,
       rating: product.rating,
       featured: product.badge === "New Arrival" || product.badge === "Bestseller",
-    })),
+    };
+
+    await prisma.product.upsert({
+      where: { id: product.id },
+      update: data,
+      create: { id: product.id, ...data },
+    });
+  }
+
+  const sampleOrderNumber = "DEMO-ORDER-001";
+  const existingSampleOrder = await prisma.order.findUnique({
+    where: { orderNumber: sampleOrderNumber },
+    select: { id: true },
   });
+
+  if (existingSampleOrder) {
+    await prisma.$transaction([
+      prisma.emailOutbox.deleteMany({ where: { orderId: existingSampleOrder.id } }),
+      prisma.paymentAttempt.deleteMany({ where: { orderId: existingSampleOrder.id } }),
+      prisma.orderItem.deleteMany({ where: { orderId: existingSampleOrder.id } }),
+      prisma.order.delete({ where: { id: existingSampleOrder.id } }),
+    ]);
+  }
+
+  const firstProduct = featuredProducts[0];
+  const secondProduct = featuredProducts[1];
+  const total = firstProduct.price + secondProduct.price * 2;
 
   await prisma.order.create({
     data: {
       userId: admin.id,
-      total: 1250,
+      orderNumber: sampleOrderNumber,
+      total,
+      totalMinor: Math.round(total * 100),
       status: OrderStatus.PAID,
+      paymentStatus: PaymentStatus.PAID,
+      paidAt: new Date(),
+      customerEmail: admin.email,
+      customerName: admin.name,
       items: {
         create: [
           {
-            productId: featuredProducts[0].id,
+            productId: firstProduct.id,
             quantity: 1,
-            price: featuredProducts[0].price,
+            price: firstProduct.price,
+            name: firstProduct.name,
+            image: firstProduct.image,
+            lineTotalMinor: Math.round(firstProduct.price * 100),
           },
           {
-            productId: featuredProducts[1].id,
+            productId: secondProduct.id,
             quantity: 2,
-            price: featuredProducts[1].price,
+            price: secondProduct.price,
+            name: secondProduct.name,
+            image: secondProduct.image,
+            lineTotalMinor: Math.round(secondProduct.price * 2 * 100),
           },
         ],
       },

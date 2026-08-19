@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "db:push": "set -a; . ./.env.local; set +a; prisma db push",
-    "db:studio": "set -a; . ./.env.local; set +a; prisma studio",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:setup": "prisma migrate deploy && prisma db seed"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
