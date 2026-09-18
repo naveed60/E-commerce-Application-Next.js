@@ -35,6 +35,34 @@ body {
   line-height: 1.7;
 }
 
+.storefront {
+  --shop-blue: #087df1;
+  color: #344054;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.shop-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+
+.shop-header {
+  box-shadow: 0 1px 0 rgb(16 24 40 / 0.04);
+}
+
+.storefront button,
+.storefront a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .storefront {
+    font-size: 15px;
+  }
+}
+
 .admin-shell {
   --admin-bg: #eef2f7;
   --admin-bg-elevated: #ffffff;
