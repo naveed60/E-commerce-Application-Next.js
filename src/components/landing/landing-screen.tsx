@@ -1,132 +1,92 @@
 "use client";
 
+import Image from "next/image";
+import { ArrowRight, CircleEllipsis, Mail, ShoppingBag, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PrimaryHeader } from "./primary-header";
 import { HeroSlider } from "./hero-slider";
 import { ProductGrid } from "./product-grid";
 import { Footer } from "./footer";
 import { type StorefrontProduct } from "@/types/product";
+import { toast } from "sonner";
 
-type LandingScreenProps = {
-  products: StorefrontProduct[];
-  databaseUnavailable?: boolean;
-};
+type LandingScreenProps = { products: StorefrontProduct[]; databaseUnavailable?: boolean };
 
-export function LandingScreen({
-  products,
-  databaseUnavailable = false,
-}: LandingScreenProps) {
+const categories = [
+  { name: "Electronics", image: "/shopkart/category-electronics.jpg" },
+  { name: "Fashion", image: "/shopkart/category-fashion.jpg" },
+  { name: "Home & Living", image: "/shopkart/category-home.jpg" },
+  { name: "Beauty", image: "/shopkart/category-beauty.jpg" },
+  { name: "Sports", image: "/shopkart/category-sports.jpg" },
+  { name: "Toys", image: "/shopkart/category-toys.jpg" },
+];
+
+export function LandingScreen({ products, databaseUnavailable = false }: LandingScreenProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResultsVisible, setSearchResultsVisible] = useState(false);
-  const searchSuggestions = useMemo(
-    () =>
-      Array.from(
-        new Set(products.flatMap((product) => [product.name, ...product.tags]))
-      ).slice(0, 12),
-    [products]
-  );
-  const handleSearchSubmit = (query: string) => {
-    setSearchTerm(query);
-    setSearchResultsVisible(true);
-  };
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const searchSuggestions = useMemo(() => Array.from(new Set(products.flatMap((product) => [product.name, ...product.tags]))).slice(0, 12), [products]);
 
   return (
-    <div className="min-h-screen bg-white">
-      <PrimaryHeader
-        searchTerm={searchTerm}
-        onSearchChange={(v) => {
-          setSearchTerm(v);
-          if (!v) setSearchResultsVisible(false);
-        }}
-        onSearchSubmit={handleSearchSubmit}
-        searchSuggestions={searchSuggestions}
-      />
-
-      <HeroSlider />
-
-      <div className="mx-auto" style={{ maxWidth: "1500px" }}>
-        {databaseUnavailable && (
-          <p
-            className="mx-4 mt-6 border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900"
-            role="status"
-          >
-            Products are temporarily unavailable. Please try again shortly.
-          </p>
-        )}
-        {searchResultsVisible ? (
-          <div ref={(el) => el?.scrollIntoView({ behavior: "smooth" })}>
-            <ProductGrid products={products} searchTerm={searchTerm} />
-          </div>
-        ) : (
-          <ProductGrid products={products} searchTerm="" />
-        )}
-
-      </div>
-
+    <div className="storefront min-h-screen bg-white">
+      <PrimaryHeader searchTerm={searchTerm} onSearchChange={(value) => { setSearchTerm(value); if (!value) setSubmittedSearch(""); }} onSearchSubmit={setSubmittedSearch} searchSuggestions={searchSuggestions} />
+      <main>
+        <HeroSlider />
+        <div className="shop-container px-4 lg:px-6">
+          {databaseUnavailable && <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">Live inventory is temporarily unavailable. Featured products are still available to browse.</p>}
+          <CategoryStrip />
+          <ProductGrid products={products} searchTerm={submittedSearch} />
+          <Promotions />
+          <Newsletter />
+        </div>
+      </main>
       <Footer />
     </div>
   );
 }
 
-function PolicyCards() {
-  const policies = [
-    {
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z"/>
-        </svg>
-      ),
-      title: "Eco-Friendly Materials",
-      desc: "We craft our furniture using responsibly sourced materials that minimize environmental impact.",
-    },
-    {
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="9" y1="15" x2="15" y2="15"/>
-        </svg>
-      ),
-      title: "Effortless Assembly",
-      desc: "Thoughtfully designed for quick setup with easy-to-follow instructions included.",
-    },
-    {
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <polyline points="1 20 1 14 7 14"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-      ),
-      title: "Giving Back to Nature",
-      desc: "Every purchase contributes to reforestation efforts and sustainable forestry initiatives.",
-    },
-    {
-      icon: (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10"/>
-          <path d="M12 12 17 7"/>
-          <path d="M12 12 7 12"/>
-        </svg>
-      ),
-      title: "Sustainable Production",
-      desc: "Dedicated to reducing waste through responsible manufacturing and eco-friendly packaging.",
-    },
-  ];
-
+function CategoryStrip() {
   return (
-    <section className="pb-20 pt-10" style={{ paddingBottom: "60px", paddingTop: "40px" }}>
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-        {policies.map((policy) => (
-          <div key={policy.title} className="text-center sm:text-left">
-            <div className="mx-auto mb-5 flex h-[70px] w-[70px] items-center justify-center rounded-full bg-[#f5f5f5] text-[#181818] sm:mx-0">
-              {policy.icon}
-            </div>
-            <h3 className="mb-1 text-[1.6rem] font-bold text-[#181818]">{policy.title}</h3>
-            <p className="mt-1.5 max-w-[500px] text-[1.4rem] leading-relaxed text-[#535353]">{policy.desc}</p>
-          </div>
-        ))}
+    <section aria-label="Popular categories" className="grid grid-cols-4 gap-4 py-7 sm:grid-cols-7 sm:gap-5">
+      {categories.map((category) => (
+        <a key={category.name} href={`#${category.name.toLowerCase().replaceAll(" ", "-")}`} className="group text-center">
+          <span className="relative mx-auto block aspect-square max-w-[112px] overflow-hidden rounded-full bg-[#f0f5fb] ring-1 ring-[#edf2f7] transition group-hover:-translate-y-1 group-hover:ring-[#b9dcff]">
+            <Image src={category.image} alt={category.name} fill sizes="112px" className="object-cover" />
+          </span>
+          <span className="mt-2.5 block text-[11px] font-bold text-[#101828] sm:text-sm">{category.name}</span>
+        </a>
+      ))}
+      <a href="#featured-products" className="group text-center">
+        <span className="mx-auto grid aspect-square max-w-[112px] place-items-center rounded-full bg-[#f0f5fb] text-[#101828] ring-1 ring-[#edf2f7] transition group-hover:-translate-y-1 group-hover:text-[#087df1]"><CircleEllipsis className="h-9 w-9" /></span>
+        <span className="mt-2.5 block text-[11px] font-bold text-[#101828] sm:text-sm">More</span>
+      </a>
+    </section>
+  );
+}
+
+function Promotions() {
+  return (
+    <section className="grid gap-4 pb-6 md:grid-cols-2">
+      <div className="relative flex min-h-[190px] overflow-hidden rounded-xl bg-gradient-to-r from-[#bff5dd] to-[#86dfc0] p-7 sm:p-9">
+        <div className="relative z-10"><p className="text-2xl font-black leading-tight text-[#073e32]">Summer Sale<br /><span className="text-[#008a69]">Up to 50% OFF</span></p><a href="#featured-products" className="mt-5 inline-flex rounded-md bg-white px-6 py-2.5 text-sm font-bold text-[#071526] shadow-sm">Shop Now</a></div>
+        <Sparkles className="absolute -bottom-7 right-8 h-40 w-40 rotate-[-15deg] text-[#0aa981]/25" strokeWidth={1} />
       </div>
+      <div className="relative flex min-h-[190px] overflow-hidden rounded-xl bg-gradient-to-r from-[#ffe0cb] to-[#ffc493] p-7 sm:p-9">
+        <div className="relative z-10"><p className="text-2xl font-black leading-tight text-[#071526]">Top Brands<br />Best Deals</p><a href="#featured-products" className="mt-5 inline-flex rounded-md bg-white px-6 py-2.5 text-sm font-bold text-[#071526] shadow-sm">Shop Now</a></div>
+        <ShoppingBag className="absolute -bottom-6 right-10 h-40 w-40 text-[#d67621]/55" strokeWidth={1.25} />
+      </div>
+    </section>
+  );
+}
+
+function Newsletter() {
+  return (
+    <section className="mb-8 flex flex-col items-center gap-5 rounded-xl bg-[#e4f2ff] p-6 sm:flex-row sm:p-8">
+      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#cce7ff] text-[#087df1]"><Mail className="h-7 w-7" /></span>
+      <div className="text-center sm:text-left"><h2 className="text-xl font-black text-[#071526]">Stay Updated</h2><p className="mt-1 text-sm text-[#5d6b7c]">Get the latest offers, new arrivals and exclusive deals.</p></div>
+      <form className="flex w-full overflow-hidden rounded-md bg-white sm:ml-auto sm:max-w-[450px]" onSubmit={(event) => { event.preventDefault(); toast.success("You’re subscribed to ShopKart updates!"); }}>
+        <input type="email" required placeholder="Enter your email" className="min-w-0 flex-1 px-4 py-3 text-sm outline-none" />
+        <button className="flex items-center gap-2 bg-[#087df1] px-5 text-sm font-bold text-white">Subscribe <ArrowRight className="hidden h-4 w-4 sm:block" /></button>
+      </form>
     </section>
   );
 }
