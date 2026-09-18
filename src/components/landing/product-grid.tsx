@@ -1,181 +1,75 @@
 "use client";
 
-import { useRef, useState } from "react";
+import Image from "next/image";
+import { Heart, Star } from "lucide-react";
 import { type StorefrontProduct } from "@/types/product";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/components/providers/cart-provider";
 import { useFavorites } from "@/components/providers/favorites-provider";
 import { useRouter } from "next/navigation";
-import { ProductModal } from "./product-modal";
-import { StorefrontProductCard } from "./storefront-product-card";
 
-type ProductGridProps = {
-  searchTerm: string;
-  products: StorefrontProduct[];
-};
+type ProductGridProps = { searchTerm: string; products: StorefrontProduct[] };
 
-export function ProductGrid({ searchTerm, products }: ProductGridProps) {
+const showcaseProducts: Array<StorefrontProduct & { oldPrice: number; reviews: number }> = [
+  { id: "wireless-headphones", name: "Wireless Headphones", description: "Immersive sound with all-day comfort.", price: 2999, oldPrice: 4999, image: "/shopkart/product-headphones.jpg", tags: ["electronics", "audio", "headphones"], rating: 4.8, reviews: 120, featured: true, category: "Electronics", createdAt: "2026-09-01T00:00:00.000Z" },
+  { id: "running-shoes", name: "Running Shoes", description: "Lightweight support for every stride.", price: 1899, oldPrice: 2999, image: "/shopkart/product-shoes.jpg", tags: ["sports", "shoes", "fashion"], rating: 4.7, reviews: 98, featured: true, category: "Sports", createdAt: "2026-09-02T00:00:00.000Z" },
+  { id: "smart-watch", name: "Smart Watch", description: "Stay connected, active and in control.", price: 3499, oldPrice: 6999, image: "/shopkart/product-watch.jpg", tags: ["electronics", "watch", "wearable"], rating: 4.9, reviews: 210, featured: true, category: "Electronics", createdAt: "2026-09-03T00:00:00.000Z" },
+  { id: "travel-backpack", name: "Travel Backpack", description: "Smart storage for daily adventures.", price: 1299, oldPrice: 2499, image: "/shopkart/product-backpack.jpg", tags: ["fashion", "travel", "backpack"], rating: 4.7, reviews: 86, featured: true, category: "Fashion", createdAt: "2026-09-04T00:00:00.000Z" },
+];
+
+const money = (amount: number) => `Rs ${new Intl.NumberFormat("en-PK").format(amount)}`;
+
+export function ProductGrid({ searchTerm }: ProductGridProps) {
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { status } = useSession();
   const router = useRouter();
-  const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
-  const normalized = searchTerm.trim().toLowerCase();
+  const query = searchTerm.trim().toLowerCase();
+  const visible = showcaseProducts.filter((product) => !query || [product.name, product.category, ...product.tags].some((value) => value.toLowerCase().includes(query)));
 
-  const visible = products.filter((p) => {
-    if (!normalized) return true;
-    return (
-      p.name.toLowerCase().includes(normalized) ||
-      p.tags.some((t) => t.toLowerCase().includes(normalized))
-    );
-  });
-
-  const featured = visible.filter((p) => p.featured);
-  const newArrivals = visible
-    .slice()
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 8);
-
-  const handleCart = (product: StorefrontProduct) => {
-    if (status === "authenticated") {
-      addItem(product);
-      toast.success(`${product.name} added to cart`);
-    } else {
+  const addToCart = (product: StorefrontProduct) => {
+    if (status !== "authenticated") {
       toast.error("Please sign in to add items to the cart");
       router.push("/login?redirect=/nextshop");
+      return;
     }
+    addItem(product);
+    toast.success(`${product.name} added to cart`);
   };
 
-  if (visible.length === 0) {
-    return (
-      <section className="py-20">
-        <div className="border border-dashed border-[#eaeaea] p-10 text-center text-[#535353]">
-          Nothing matches &quot;{searchTerm}&quot;. Try a different keyword.
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <>
-      <div className="py-10">
-         {newArrivals.length > 0 && (
-          <Section title="FRESH FROM THE COLLECTION" subtitle="NEW ARRIVALS">
-            <ScrollGrid>
-              {newArrivals.map((p) => (
-                <ScrollItem key={p.id}>
-                  <StorefrontProductCard
-                    product={p}
-                    isFavorite={isFavorite(p.id)}
-                    onToggleFavorite={toggleFavorite}
-                    onAddToCart={() => handleCart(p)}
-                    onView={setSelectedProduct}
-                  />
-                </ScrollItem>
-              ))}
-            </ScrollGrid>
-          </Section>
-        )}
-        {featured.length > 0 && (
-          <Section title="TIMELESS ELEGANCE FOR YOUR HOME" subtitle="HANDPICKED ELEGANCE">
-            <ScrollGrid>
-              {featured.map((p) => (
-                <ScrollItem key={p.id}>
-                  <StorefrontProductCard
-                    product={p}
-                    isFavorite={isFavorite(p.id)}
-                    onToggleFavorite={toggleFavorite}
-                    onAddToCart={() => handleCart(p)}
-                    onView={setSelectedProduct}
-                  />
-                </ScrollItem>
-              ))}
-            </ScrollGrid>
-          </Section>
-        )}
-
-       
+    <section id="featured-products" className="py-8 sm:py-10">
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="text-2xl font-black tracking-[-0.02em] text-[#071526] sm:text-[30px]">Featured Products</h2>
+        <button className="text-sm font-bold text-[#087df1]">View All <span aria-hidden>→</span></button>
       </div>
-
-      {selectedProduct && (
-        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+      {visible.length ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          {visible.map((product) => (
+            <article key={product.id} className="group overflow-hidden rounded-lg border border-[#dfe7ef] bg-white p-3 shadow-[0_2px_10px_rgba(20,49,81,.04)] transition hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(20,49,81,.12)] sm:p-4">
+              <div className="relative mb-4 aspect-[1.25] overflow-hidden rounded-md bg-[#f4f7fa]">
+                <Image src={product.image} alt={product.name} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover transition duration-500 group-hover:scale-105" />
+                <button type="button" onClick={() => toggleFavorite(product)} aria-label="Toggle favorite" className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-[#142033] shadow-sm">
+                  <Heart className={`h-[18px] w-[18px] ${isFavorite(product.id) ? "fill-[#ef2b2d] text-[#ef2b2d]" : ""}`} />
+                </button>
+              </div>
+              <h3 className="truncate text-sm font-bold text-[#101828] sm:text-base">{product.name}</h3>
+              <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2">
+                <strong className="text-sm text-[#071526] sm:text-base">{money(product.price)}</strong>
+                <span className="text-[11px] text-[#98a2b3] line-through sm:text-xs">{money(product.oldPrice)}</span>
+              </div>
+              <div className="my-2.5 flex items-center gap-1 text-[#f6b900]">
+                {[0, 1, 2, 3, 4].map((star) => <Star key={star} className="h-3.5 w-3.5 fill-current" />)}
+                <span className="ml-1 text-[11px] text-[#667085]">({product.reviews})</span>
+              </div>
+              <button type="button" onClick={() => addToCart(product)} className="w-full rounded-md bg-[#087df1] py-2.5 text-xs font-bold text-white transition hover:bg-[#0569cc] sm:text-sm">Add to Cart</button>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-[#cdd9e7] bg-[#f8faff] p-10 text-center text-sm text-[#667085]">Nothing matches “{searchTerm}”. Try another search.</div>
       )}
-    </>
-  );
-}
-
-function Section({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-16">
-      <div className="mb-12 flex items-end justify-between">
-        <div>
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-[1px] text-[#b7b7b7]">{title}</p>
-          <h2 className="text-[2.4rem] font-bold text-[#181818]">{subtitle}</h2>
-        </div>
-      </div>
-      {children}
     </section>
-  );
-}
-
-function ScrollGrid({ children }: { children: React.ReactNode }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const amount = scrollRef.current.clientWidth * 0.8;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -amount : amount,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={() => scroll("left")}
-        className="absolute -left-4 top-1/3 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition hover:bg-[#fdc402] group-hover:flex"
-        aria-label="Scroll left"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
-      <div
-        ref={scrollRef}
-        className="flex gap-[30px] overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollSnapType: "x mandatory" }}
-      >
-        {children}
-      </div>
-      <button
-        type="button"
-        onClick={() => scroll("right")}
-        className="absolute -right-4 top-1/3 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#181818] shadow-md transition hover:bg-[#fdc402] group-hover:flex"
-        aria-label="Scroll right"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-function ScrollItem({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="min-w-0 shrink-0"
-      style={{
-        width: "calc(20% - 24px)",
-        minWidth: "220px",
-        scrollSnapAlign: "start",
-      }}
-    >
-      {children}
-    </div>
   );
 }
