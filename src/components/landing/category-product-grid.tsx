@@ -60,7 +60,7 @@ export function CategoryProductGrid({
       toast.success(`${product.name} added to cart`);
     } else {
       toast.error("Please sign in to add items to the cart");
-      router.push("/login?redirect=/nextshop");
+      router.push("/login?redirect=/");
     }
   };
 

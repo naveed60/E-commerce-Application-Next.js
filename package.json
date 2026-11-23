@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:migrate": "prisma migrate deploy",
+    "db:migrate": "node scripts/migrate-with-next-env.cjs",
     "db:seed": "prisma db seed",
     "db:setup": "prisma migrate deploy && prisma db seed"
   },

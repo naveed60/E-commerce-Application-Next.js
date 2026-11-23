@@ -5,7 +5,7 @@ NextShop is a modern ecommerce starter built with **Next.js 16 (App Router)**, *
 ### Highlights
 
 - **Landing experience**: hero slider, search-as-you-type filtering, feature highlights, responsive layout, mobile sidebar, and animated cart drawer with badge counter.
-- **Admin suite**: `/nextshop/admin` is gated behind NextAuth + role-based authorization and includes sidebar navigation, spotlight metrics, live order table, and CTA cards.
+- **Admin suite**: `/admin` is gated behind NextAuth + role-based authorization and includes sidebar navigation, spotlight metrics, live order table, and CTA cards.
 - **Authentication**: email/password credentials provider backed by Prisma + bcrypt with registration API and client-side login/register pages.
 - **Database ready**: Prisma schema for PostgreSQL (users, products, carts, orders) plus seed script that provisions an admin account and demo catalog.
 - **Clean UI foundation**: Tailwind v4, shared button component, cart context, session provider, and remote Unsplash imagery configured in `next.config.ts`.
@@ -37,13 +37,13 @@ database named `nextshop`, or point `DATABASE_URL` at an existing empty database
    ```bash
    npm run dev
    ```
-   - Landing page: [http://localhost:3000/nextshop](http://localhost:3000/nextshop)
-   - Admin dashboard: [http://localhost:3000/nextshop/admin](http://localhost:3000/nextshop/admin)
+   - Landing page: [http://localhost:3000](http://localhost:3000)
+   - Admin dashboard: [http://localhost:3000/admin](http://localhost:3000/admin)
    - Auth routes: `/login` and `/register`
 
 ### Safepay checkout
 
-The storefront includes an authenticated, hosted Safepay checkout at `/nextshop/checkout`.
+The storefront includes an authenticated, hosted Safepay checkout at `/checkout`.
 
 1. Add the Safepay sandbox credentials, `APP_URL`, Resend credentials, and `CRON_SECRET` from `.env.example` to your local environment.
 2. Apply the commerce schema with `npm run db:migrate`.
@@ -63,8 +63,8 @@ The redirect back from Safepay only shows payment status. A signed `payment.succ
 ```
 src/
   app/
-    nextshop/            # Landing page route
-    nextshop/admin/      # Protected admin dashboard
+    (store)/             # Storefront routes
+    (store)/admin/       # Protected admin dashboard
     api/auth/...         # NextAuth + registration handlers
     (auth)/login|register
   components/
@@ -83,7 +83,7 @@ prisma/
 
 - **Responsive navigation**: Hamburger-triggered sidebar, sticky header, stacked search input on mobile, and `lucide-react` icons for clarity.
 - **Cart state**: Lightweight context with optimistic add-to-cart interactions and slide-over drawer.
-- **Authorization**: `/nextshop/admin` leverages `getServerSession` with role checks; non-admins are redirected to the storefront.
+- **Authorization**: `/admin` leverages `getServerSession` with role checks; non-admins are redirected to the storefront.
 - **UI polish**: Rounded containers, glassmorphism touches, and modern typography via Geist fonts for both public and admin surfaces.
 
 ### Next steps

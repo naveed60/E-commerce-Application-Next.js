@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   BarChart3,
-  Bell,
   LayoutDashboard,
   Menu,
   Package,
-  Search,
   Settings,
   ShoppingBag,
   Store,
   Users,
+  TicketPercent,
+  Star,
+  RotateCcw,
   X,
 } from "lucide-react";
 
@@ -24,12 +25,15 @@ import { AdminThemeToggle, type AdminTheme } from "./admin-theme-toggle";
 import { AdminUserMenu } from "./admin-user-menu";
 
 const navItems = [
-  { label: "Analytics", href: "/nextshop/admin/overview", icon: LayoutDashboard },
-  { label: "Orders", href: "/nextshop/admin/orders", icon: ShoppingBag },
-  { label: "Products", href: "/nextshop/admin/products", icon: Package },
-  { label: "Customers", href: "/nextshop/admin/customers", icon: Users },
-  { label: "Insights", href: "/nextshop/admin/analytics", icon: BarChart3 },
-  { label: "Settings", href: "/nextshop/admin/settings", icon: Settings },
+  { label: "Overview", href: "/admin/overview", icon: LayoutDashboard },
+  { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { label: "Products", href: "/admin/products", icon: Package },
+  { label: "Customers", href: "/admin/customers", icon: Users },
+  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { label: "Coupons", href: "/admin/coupons", icon: TicketPercent },
+  { label: "Reviews", href: "/admin/reviews", icon: Star },
+  { label: "Refund requests", href: "/admin/refunds", icon: RotateCcw },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 type AdminSidebarUser = {
@@ -52,28 +56,6 @@ export function AdminShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<AdminTheme>(initialTheme);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const userLabel = useMemo(() => {
-    const source = user?.name?.trim() || user?.email?.trim() || "Admin";
-    return source;
-  }, [user?.email, user?.name]);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    try {
-      const storedTheme = window.localStorage.getItem("nextshop-admin-theme");
-      if (storedTheme === "light" || storedTheme === "dark") {
-        setTheme(storedTheme);
-      }
-    } catch {
-      // Persistence is best-effort.
-    }
-  }, []);
-
   useEffect(() => {
     try {
       document.cookie = `nextshop-admin-theme=${theme}; path=/; max-age=31536000; samesite=lax`;
@@ -129,11 +111,10 @@ export function AdminShell({
         >
           <div className="flex items-center justify-between border-b border-[var(--admin-sidebar-border)] px-5 py-5">
             <Link
-              href="/nextshop/admin/overview"
+              href="/admin/overview"
               className="flex items-baseline gap-1 text-lg font-semibold tracking-tight text-[var(--admin-sidebar-text)]"
             >
-              <span>Admin-</span>
-              <span className="text-[var(--admin-accent)]">NextShop</span>
+              <span>Drape &amp; Line</span>
             </Link>
             <button
               type="button"
@@ -145,7 +126,7 @@ export function AdminShell({
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 px-3 py-4 text-sm">
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 text-sm">
             <p className="px-3 pb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--admin-sidebar-muted)]">
               Navigation
             </p>
@@ -156,6 +137,7 @@ export function AdminShell({
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={() => setMobileOpen(false)}
                   className={cn(
                     "group flex items-center justify-between rounded-2xl px-3 py-3.5 font-medium transition",
                     isActive
@@ -193,7 +175,8 @@ export function AdminShell({
                 Application
               </p>
               <Link
-                href="/nextshop"
+                href="/"
+                onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-between rounded-2xl px-3 py-3.5 text-[var(--admin-sidebar-muted)] transition hover:bg-[var(--admin-sidebar-hover-bg)] hover:text-[var(--admin-sidebar-text)]"
               >
                 <span className="flex items-center gap-3">
@@ -226,33 +209,13 @@ export function AdminShell({
                     Dashboard
                   </h1>
                   <p className="text-sm text-[var(--admin-text-soft)]">
-                    NextShop Admin Dashboard
+                    Drape & Line Admin
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <label className="hidden min-w-[220px] items-center gap-3 rounded-full border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] px-4 py-3 shadow-sm sm:flex">
-                  <Search className="h-4 w-4 text-[var(--admin-text-muted)]" />
-                  <input
-                    type="search"
-                    placeholder="Search"
-                    className="w-full bg-transparent text-sm text-[var(--admin-text)] outline-none placeholder:text-[var(--admin-text-muted)]"
-                  />
-                </label>
-
                 <AdminThemeToggle theme={theme} onChange={setTheme} />
-
-                <button
-                  type="button"
-                  className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-bg-elevated)] text-[var(--admin-text)] shadow-sm transition hover:border-[var(--admin-border-strong)]"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-1 top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white">
-                    2
-                  </span>
-                </button>
 
                 <AdminUserMenu
                   user={user}

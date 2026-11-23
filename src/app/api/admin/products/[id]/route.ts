@@ -1,11 +1,11 @@
 import { Prisma } from "@prisma/client";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { getServerSession } = require("next-auth") as any;
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PRODUCT_CATEGORY_VALUES } from "@/lib/product-categories";
 
 const productUpdateSchema = z
   .object({
@@ -13,7 +13,7 @@ const productUpdateSchema = z
     description: z.string().min(1).optional(),
     image: z.string().min(1).optional(),
     price: z.coerce.number().positive().optional(),
-    category: z.string().min(1).optional(),
+    category: z.enum(PRODUCT_CATEGORY_VALUES).optional(),
     tags: z.array(z.string()).optional(),
     inventory: z.coerce.number().int().min(0).optional(),
     featured: z.boolean().optional(),
@@ -83,10 +83,13 @@ export async function PATCH(
       updateData.rating = productData.rating;
     }
 
-    await prisma.product.update({
-      where: { id: productId },
+    const updated = await prisma.product.updateMany({
+      where: { id: productId, archived: false },
       data: updateData,
     });
+    if (updated.count === 0) {
+      return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ message: "Product updated" }, { status: 200 });
   } catch (error) {
@@ -128,11 +131,15 @@ export async function DELETE(
   }
 
   try {
-    await prisma.product.delete({
-      where: { id: productId },
+    const archived = await prisma.product.updateMany({
+      where: { id: productId, archived: false },
+      data: { archived: true },
     });
+    if (archived.count === 0) {
+      return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    }
 
-    return NextResponse.json({ message: "Product deleted" }, { status: 200 });
+    return NextResponse.json({ message: "Product removed from the catalog" }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

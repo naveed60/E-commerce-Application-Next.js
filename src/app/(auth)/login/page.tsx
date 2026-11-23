@@ -4,21 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthAnimatedCard } from "@/components/auth/auth-animated-card";
 import { PyramidLoader } from "@/components/ui/pyramid-loader";
-
-function getRedirectPath(value: string | null) {
-  if (!value) return "/nextshop";
-
-  if (value.startsWith("/")) {
-    return value;
-  }
-
-  try {
-    const parsed = new URL(value);
-    return `${parsed.pathname}${parsed.search}${parsed.hash}` || "/nextshop";
-  } catch {
-    return "/nextshop";
-  }
-}
+import { getRedirectPath } from "@/components/auth/redirect-path";
 
 function LoginPageContent() {
   const searchParams = useSearchParams();

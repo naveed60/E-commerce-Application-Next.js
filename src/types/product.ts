@@ -8,5 +8,6 @@ export type StorefrontProduct = {
   rating: number;
   featured: boolean;
   category: string;
+  inventory?: number;
   createdAt: string;
 };

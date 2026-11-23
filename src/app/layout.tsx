@@ -15,22 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NextShop — Modern commerce kit",
+  title: "Drape & Line — Everyday, elevated",
   description:
-    "A clean Next.js commerce starter with PostgreSQL, authentication, and a responsive admin dashboard.",
+    "Thoughtful essentials for everyday life.",
   openGraph: {
-    title: "NextShop — Modern commerce kit",
+    title: "Drape & Line — Everyday, elevated",
     description:
-      "A clean Next.js commerce starter with PostgreSQL, authentication, and a responsive admin dashboard.",
+      "Thoughtful essentials for everyday life.",
     type: "website",
     locale: "en_US",
-    siteName: "NextShop",
+    siteName: "Drape & Line",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NextShop — Modern commerce kit",
+    title: "Drape & Line — Everyday, elevated",
     description:
-      "A clean Next.js commerce starter with PostgreSQL, authentication, and a responsive admin dashboard.",
+      "Thoughtful essentials for everyday life.",
   },
 };
 

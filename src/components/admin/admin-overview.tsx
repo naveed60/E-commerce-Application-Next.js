@@ -103,7 +103,7 @@ export function AdminOverview({ data }: { data: DashboardData }) {
             </p>
           </div>
           <Link
-            href="/nextshop/admin/customers"
+            href="/admin/customers"
             className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--admin-accent)] transition hover:text-[var(--admin-accent-strong)]"
           >
             View all

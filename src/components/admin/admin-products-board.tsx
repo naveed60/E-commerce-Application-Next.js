@@ -51,7 +51,7 @@ export function AdminProductsBoard() {
   }, [refreshProducts]);
 
   const handleDeleteProduct = async (product: AdminProductSummary) => {
-    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) {
+    if (!confirm(`Remove "${product.name}" from the catalog? Existing orders will be retained.`)) {
       return;
     }
 
@@ -67,7 +67,7 @@ export function AdminProductsBoard() {
         throw new Error(payload?.message ?? "Unable to delete product");
       }
 
-      toast.success("Product deleted");
+      toast.success("Product removed from the catalog");
       await refreshProducts();
     } catch (error) {
       toast.error(
@@ -99,7 +99,7 @@ export function AdminProductsBoard() {
             Refresh
           </Button>
           <Link
-            href="/nextshop/admin/products/add"
+            href="/admin/products/add"
             className="inline-flex items-center justify-center rounded-full bg-[var(--admin-accent)] px-4 py-2 text-sm font-medium text-white shadow-[0_10px_24px_var(--admin-ring)] transition hover:bg-[var(--admin-accent-strong)]"
           >
             Add product
@@ -124,7 +124,7 @@ export function AdminProductsBoard() {
             <div className="rounded-[24px] border border-dashed border-[var(--admin-border)] bg-[var(--admin-bg-soft)] p-6">
               <p className="text-sm text-[var(--admin-text-soft)]">No products found.</p>
               <Link
-                href="/nextshop/admin/products/add"
+                href="/admin/products/add"
                 className="mt-3 inline-flex text-sm font-semibold text-[var(--admin-accent)]"
               >
                 Add your first product
@@ -162,7 +162,7 @@ export function AdminProductsBoard() {
                     <Eye className="h-4 w-4" />
                   </button>
                   <Link
-                    href={`/nextshop/admin/products/${product.id}/edit`}
+                    href={`/admin/products/${product.id}/edit`}
                     className={iconButtonClass}
                     aria-label={`Edit ${product.name}`}
                     title={`Edit ${product.name}`}
@@ -175,8 +175,8 @@ export function AdminProductsBoard() {
                     className={iconDangerButtonClass}
                     disabled={deletingProductId === product.id}
                     onClick={() => handleDeleteProduct(product)}
-                    aria-label={`Delete ${product.name}`}
-                    title={`Delete ${product.name}`}
+                    aria-label={`Remove ${product.name} from catalog`}
+                    title={`Remove ${product.name} from catalog`}
                   >
                     {deletingProductId === product.id ? (
                       <span className="inline-flex items-center gap-2">

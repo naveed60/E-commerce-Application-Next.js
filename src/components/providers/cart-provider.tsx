@@ -18,6 +18,7 @@ type CartContextValue = {
   isOpen: boolean;
   addItem: (product: Product) => void;
   removeItem: (id: string) => void;
+  setQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
   closeCart: () => void;
@@ -61,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           name: item.name,
           image: item.image,
           price: item.price,
-          quantity: Math.floor(item.quantity),
+          quantity: Math.min(10, Math.floor(item.quantity)),
         }));
 
       setItems(normalized);
@@ -86,7 +87,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existing) {
         return prev.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: Math.min(10, item.quantity + 1) }
             : item,
         );
       }
@@ -108,6 +109,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const setQuantity = (id: string, quantity: number) => {
+    if (!Number.isFinite(quantity)) return;
+    const nextQuantity = Math.min(10, Math.floor(quantity));
+    setItems((prev) => nextQuantity <= 0
+      ? prev.filter((item) => item.id !== id)
+      : prev.map((item) => item.id === id ? { ...item, quantity: nextQuantity } : item));
+  };
+
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     [items],
@@ -125,6 +134,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       isOpen,
       addItem,
       removeItem,
+      setQuantity,
       clearCart: () => setItems([]),
       toggleCart: () => setIsOpen((prev) => !prev),
       closeCart: () => setIsOpen(false),

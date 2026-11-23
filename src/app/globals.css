@@ -702,3 +702,25 @@ body {
     display: none;
   }
 }
+
+/* Drape & Line admin palette, scoped to the admin shell. */
+.admin-shell[data-theme="light"] {
+  --admin-bg: #f5f1e9;
+  --admin-bg-elevated: #ffffff;
+  --admin-bg-soft: #f8f5ef;
+  --admin-border: rgba(29, 41, 37, .12);
+  --admin-border-strong: rgba(29, 41, 37, .25);
+  --admin-text: #1d2925;
+  --admin-text-soft: #68756e;
+  --admin-text-muted: #7d8982;
+  --admin-sidebar-start: #06472f;
+  --admin-sidebar-end: #063d2d;
+  --admin-sidebar-border: rgba(255, 255, 255, .16);
+  --admin-sidebar-text: #ffffff;
+  --admin-sidebar-muted: rgba(255, 255, 255, .72);
+  --admin-sidebar-hover-bg: rgba(255, 255, 255, .10);
+  --admin-sidebar-active-bg: rgba(255, 255, 255, .17);
+  --admin-accent: #0a633f;
+  --admin-accent-strong: #06472f;
+  --admin-shadow: 0 12px 30px rgba(29, 41, 37, .06);
+}

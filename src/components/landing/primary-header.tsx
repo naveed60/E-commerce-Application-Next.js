@@ -39,12 +39,12 @@ export function PrimaryHeader({ searchTerm, onSearchChange, onSearchSubmit }: He
     onSearchSubmit?.(searchTerm);
   };
 
-  const openAccount = () => router.push(status === "authenticated" ? "/nextshop" : "/login?redirect=/nextshop");
+  const openAccount = () => router.push(status === "authenticated" ? "/" : "/login?redirect=/");
 
   return (
     <header className="shop-header sticky top-0 z-40 bg-white">
       <div className="shop-container flex h-[76px] items-center gap-5 px-4 lg:px-6">
-        <Link href="/nextshop" aria-label="ShopKart homepage" className="shrink-0 text-[25px]"><ShopKartLogo /></Link>
+        <Link href="/" aria-label="ShopKart homepage" className="shrink-0 text-[25px]"><ShopKartLogo /></Link>
 
         <form onSubmit={submit} className="mx-auto hidden h-11 max-w-[560px] flex-1 overflow-hidden rounded-md border border-[#dfe7ef] bg-[#f7f9fb] md:flex">
           <input value={searchTerm} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search for products..." className="min-w-0 flex-1 bg-transparent px-5 text-sm text-[#344054] outline-none placeholder:text-[#8c98a8]" />

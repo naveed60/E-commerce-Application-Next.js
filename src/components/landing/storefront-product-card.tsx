@@ -50,7 +50,7 @@ export function StorefrontProductCard({
   return (
     <article className="group relative bg-white transition-shadow hover:shadow-lg">
       <div className="relative overflow-hidden bg-[#f9f9f9]" style={{ paddingTop: "124%" }}>
-        <Link href={`/nextshop/products/${product.id}`} className="absolute inset-0">
+        <Link href={`/products/${product.id}`} className="absolute inset-0">
           {getValidImageUrl(product.image) ? (
             <Image
               src={product.image}
@@ -107,7 +107,7 @@ export function StorefrontProductCard({
 
       <div className="px-0 pb-5 pt-4">
         <h3 className="mb-1 text-[1.4rem] font-bold text-[#181818] transition-colors hover:text-[#fdc402]">
-          <Link href={`/nextshop/products/${product.id}`}>{product.name}</Link>
+          <Link href={`/products/${product.id}`}>{product.name}</Link>
         </h3>
         <p className="mb-4 line-clamp-1 text-[1.3rem] text-[#535353]">{product.description}</p>
 

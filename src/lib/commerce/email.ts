@@ -8,6 +8,7 @@ type ConfirmationEmailPayload = {
   customerName: string;
   currency: string;
   totalMinor: number;
+  discountMinor?: number;
   items: Array<{
     name: string;
     quantity: number;
@@ -65,12 +66,13 @@ function renderConfirmationEmail(payload: ConfirmationEmailPayload): { html: str
             <table style="width: 100%; border-collapse: collapse; border-top: 1px solid #e4e4e7; border-bottom: 1px solid #e4e4e7;">
               <tbody>${items}</tbody>
             </table>
+            ${payload.discountMinor ? `<p style="margin: 20px 0 0; text-align: right;">Discount: −${formatMinorPkr(payload.discountMinor)}</p>` : ""}
             <p style="margin: 20px 0 0; font-size: 18px; font-weight: 700; text-align: right;">Total: ${total}</p>
             <p style="margin: 28px 0 0; color: #71717a; font-size: 13px; line-height: 1.5;">Keep this email for your records. If you need help, reply to this message and include your order number.</p>
           </main>
         </body>
       </html>`,
-    text: `Thanks for your order, ${payload.customerName}.\n\nYour Safepay payment has been confirmed.\nOrder ${payload.orderNumber}\n\n${textItems}\n\nTotal: ${total}`,
+    text: `Thanks for your order, ${payload.customerName}.\n\nYour Safepay payment has been confirmed.\nOrder ${payload.orderNumber}\n\n${textItems}${payload.discountMinor ? `\n\nDiscount: −${formatMinorPkr(payload.discountMinor)}` : ""}\n\nTotal: ${total}`,
   };
 }
 
