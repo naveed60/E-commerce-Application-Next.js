@@ -35,22 +35,26 @@ const STORAGE_KEY = "nextshop_favorites";
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   // Load from localStorage after hydration to avoid server/client mismatch
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setFavorites(JSON.parse(stored) as FavoriteItem[]);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) setFavorites(parsed.filter((item) => item && typeof item.id === "string" && typeof item.name === "string" && typeof item.image === "string" && typeof item.price === "number"));
+      }
     } catch {
       // ignore
+    } finally {
+      setHydrated(true);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-  }, [favorites]);
-
-  const isFavorite = (id: string) => favorites.some((f) => f.id === id);
+    if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+  }, [favorites, hydrated]);
 
   const toggleFavorite = (product: StorefrontProduct) => {
     setFavorites((prev) => {
@@ -76,7 +80,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     () => ({
       favorites,
       isOpen,
-      isFavorite,
+      isFavorite: (id: string) => favorites.some((f) => f.id === id),
       toggleFavorite,
       removeFavorite,
       toggleDrawer: () => setIsOpen((prev) => !prev),

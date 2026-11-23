@@ -1,18 +1,18 @@
 import { Prisma } from "@prisma/client";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { getServerSession } = require("next-auth") as any;
+import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PRODUCT_CATEGORY_VALUES } from "@/lib/product-categories";
 
 const productCreateSchema = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   image: z.string().min(1),
   price: z.coerce.number().positive(),
-  category: z.string().min(1, "Category is required"),
+  category: z.enum(PRODUCT_CATEGORY_VALUES),
   tags: z.array(z.string()).optional().default([]),
   inventory: z.coerce.number().int().min(0).default(25),
   featured: z.boolean().default(false),
@@ -27,6 +27,7 @@ export async function GET() {
   }
 
   const products = await prisma.product.findMany({
+    where: { archived: false },
     orderBy: { createdAt: "desc" },
   });
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatMinorPkr } from "@/lib/utils";
 
 type CheckoutResponse = {
   checkoutUrl: string;
@@ -15,11 +15,32 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
   const { items, total } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [quote, setQuote] = useState<{ code: string; cart: string; discountMinor: number; totalMinor: number } | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const cartSignature = JSON.stringify(items.map((item) => [item.id, item.quantity]));
+  const validQuote = quote && quote.code === couponCode.trim().toUpperCase() && quote.cart === cartSignature ? quote : null;
   const idempotencyKey = useRef<string | null>(null);
+
+  async function applyCoupon() {
+    setError(null); setQuote(null); setQuoting(true);
+    try {
+      const code = couponCode.trim().toUpperCase();
+      const response = await fetch("/api/checkout/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, items: items.map((item) => ({ productId: item.id, quantity: item.quantity })) }) });
+      const body = await response.json();
+      if (!response.ok) { setError(body.message || "Unable to apply coupon."); return; }
+      setQuote({ code, cart: cartSignature, discountMinor: body.discountMinor, totalMinor: body.totalMinor });
+    } catch { setError("Unable to apply coupon. Please try again."); }
+    finally { setQuoting(false); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!items.length || isSubmitting) {
+      return;
+    }
+    if (couponCode.trim() && !validQuote) {
+      setError("Apply the coupon to this cart before continuing.");
       return;
     }
 
@@ -33,6 +54,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
       idempotencyKey: key,
       customerName: String(form.get("customerName") ?? "").trim(),
       customerPhone: String(form.get("customerPhone") ?? "").trim(),
+      couponCode: couponCode.trim() || undefined,
       shippingAddress: {
         line1: String(form.get("line1") ?? "").trim(),
         line2: String(form.get("line2") ?? "").trim() || undefined,
@@ -76,7 +98,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
       <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-center justify-center px-6 text-center">
         <h1 className="text-3xl font-semibold text-zinc-900">Your cart is empty</h1>
         <p className="mt-3 text-zinc-500">Add products before starting checkout.</p>
-        <Link href="/nextshop" className="mt-6 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white">
+        <Link href="/" className="mt-6 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white">
           Continue shopping
         </Link>
       </main>
@@ -114,6 +136,9 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
             <Field label="Postal code (optional)" name="postalCode" />
           </div>
 
+          <label htmlFor="coupon-code" className="mt-6 block text-sm font-medium text-zinc-700">Coupon code (optional)</label>
+          <div className="mt-2 flex gap-2"><input id="coupon-code" value={couponCode} onChange={(event) => { setCouponCode(event.target.value); setQuote(null); }} maxLength={40} autoComplete="off" className="min-w-0 flex-1 rounded-xl border border-zinc-200 px-3 py-3 uppercase outline-none focus:border-zinc-600" /><button type="button" disabled={!couponCode.trim() || quoting || isSubmitting} onClick={applyCoupon} className="rounded-xl border border-zinc-300 px-4 text-sm font-semibold disabled:opacity-50">{quoting ? "Checking…" : "Apply"}</button></div>
+          {validQuote && <p role="status" className="mt-2 text-xs text-emerald-700">Coupon applied. The final amount is confirmed at checkout.</p>}
           {error && (
             <p role="alert" className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
@@ -122,7 +147,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
 
           <Button type="submit" variant="primary" className="mt-8 w-full" disabled={isSubmitting}>
             {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-            {isSubmitting ? "Opening secure payment…" : `Pay ${formatPrice(total)} with Safepay`}
+            {isSubmitting ? "Opening secure payment…" : validQuote ? `Pay ${formatMinorPkr(validQuote.totalMinor)} with Safepay` : `Pay ${formatPrice(total)} with Safepay`}
           </Button>
           <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
             You will be redirected to Safepay to complete your payment. Your order is confirmed only after we receive Safepay’s secure payment confirmation.
@@ -142,11 +167,9 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
               </div>
             ))}
           </div>
-          <div className="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5 text-base font-semibold text-zinc-900">
-            <span>Total</span>
-            <span>{formatPrice(total)}</span>
-          </div>
-          <Link href="/nextshop" className="mt-5 inline-block text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900">
+          {validQuote && <div className="mt-6 flex justify-between border-t border-zinc-200 pt-5 text-sm text-emerald-700"><span>Discount</span><span>−{formatMinorPkr(validQuote.discountMinor)}</span></div>}
+          <div className="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5 text-base font-semibold text-zinc-900"><span>Total</span><span>{validQuote ? formatMinorPkr(validQuote.totalMinor) : formatPrice(total)}</span></div>
+          <Link href="/" className="mt-5 inline-block text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900">
             Edit cart
           </Link>
         </aside>

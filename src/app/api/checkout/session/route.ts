@@ -12,6 +12,7 @@ const checkoutSchema = z.object({
   idempotencyKey: z.string().min(16).max(128),
   customerName: z.string().trim().min(2).max(100),
   customerPhone: z.string().trim().regex(/^\+?[0-9]{8,15}$/, "Use an international phone number."),
+  couponCode: z.string().trim().max(40).regex(/^[a-zA-Z0-9_-]*$/).optional(),
   shippingAddress: z.object({
     line1: z.string().trim().min(4).max(150),
     line2: z.string().trim().max(150).optional(),

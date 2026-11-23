@@ -116,7 +116,7 @@ export function CheckoutReturnClient({ orderId }: { orderId: string | null }) {
           </div>
         )}
 
-        <Link href="/nextshop" className="mt-8 inline-flex rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700">
+        <Link href="/" className="mt-8 inline-flex rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700">
           Continue shopping
         </Link>
       </section>

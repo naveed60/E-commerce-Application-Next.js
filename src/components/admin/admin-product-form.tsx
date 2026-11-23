@@ -7,22 +7,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PyramidLoader } from "@/components/ui/pyramid-loader";
 
-import type { AdminProductFormInitialData } from "@/types/admin-product";
+import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 
-const PRODUCT_CATEGORIES = [
-  { label: "Men — Un-Stitch", value: "men-un-stitch" },
-  { label: "Men — Stitch", value: "men-stitch" },
-  { label: "Men — Watches", value: "men-watches" },
-  { label: "Men — Perfumes", value: "men-perfumes" },
-  { label: "Men — Cufflinks", value: "men-cufflinks" },
-  { label: "Women — Un-Stitch", value: "women-un-stitch" },
-  { label: "Women — Stitch", value: "women-stitch" },
-  { label: "Women — Watches", value: "women-watches" },
-  { label: "Women — Perfumes", value: "women-perfumes" },
-  { label: "Women — Cufflinks", value: "women-cufflinks" },
-  { label: "Kids — Baby Boys Suits", value: "kids-baby-boys" },
-  { label: "Kids — Baby Girls Suits", value: "kids-baby-girls" },
-];
+import type { AdminProductFormInitialData } from "@/types/admin-product";
 
 type ProductFormState = {
   name: string;
@@ -216,7 +203,7 @@ export function AdminProductForm({
             }
 
             toast.success(isEditing ? "Product updated" : "Product added");
-            router.push("/nextshop/admin/products");
+            router.push("/admin/products");
             router.refresh();
           } catch (error) {
             toast.error(
@@ -440,7 +427,7 @@ export function AdminProductForm({
             type="button"
             variant="ghost"
             className="bg-transparent text-[var(--admin-text)] hover:bg-[var(--admin-bg-soft)]"
-            onClick={() => router.push("/nextshop/admin/products")}
+            onClick={() => router.push("/admin/products")}
           >
             Cancel
           </Button>

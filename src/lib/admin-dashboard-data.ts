@@ -103,7 +103,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       latestProducts,
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.product.count(),
+      prisma.product.count({ where: { archived: false } }),
       prisma.order.count(),
       prisma.order.findMany({
         take: 5,
@@ -111,6 +111,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         include: { user: true },
       }),
       prisma.product.findMany({
+        where: { archived: false },
         take: 5,
         orderBy: { createdAt: "desc" },
       }),

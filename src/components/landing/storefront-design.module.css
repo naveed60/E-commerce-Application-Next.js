@@ -1,0 +1,16 @@
+.storefront {
+  --store-green: #06472f;
+  --store-paper: #fbfaf8;
+  font-family: var(--font-drape-sans), sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.serif {
+  font-family: var(--font-drape-display), Georgia, serif;
+}
+
+.storefront button,
+.storefront a {
+  -webkit-tap-highlight-color: transparent;
+}

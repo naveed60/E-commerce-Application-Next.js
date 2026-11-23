@@ -31,7 +31,7 @@ export function ProductGrid({ searchTerm }: ProductGridProps) {
   const addToCart = (product: StorefrontProduct) => {
     if (status !== "authenticated") {
       toast.error("Please sign in to add items to the cart");
-      router.push("/login?redirect=/nextshop");
+      router.push("/login?redirect=/");
       return;
     }
     addItem(product);

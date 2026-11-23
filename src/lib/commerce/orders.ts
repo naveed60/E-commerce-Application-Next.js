@@ -9,6 +9,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fromMinorUnits, toMinorUnits } from "./money";
+import { couponDiscount } from "./coupon";
 import {
   createSafepayCheckout,
   createSafepayHostedUrl,
@@ -41,6 +42,7 @@ export type CheckoutInput = {
   customerPhone: string;
   shippingAddress: ShippingAddressInput;
   items: CheckoutLineInput[];
+  couponCode?: string;
 };
 
 export class CheckoutError extends Error {
@@ -78,9 +80,8 @@ function publicAppUrl(): string {
     throw new Error("APP_URL or NEXTAUTH_URL must be configured.");
   }
   try {
-    // This storefront is served from the host root; `/nextshop` is a route,
-    // not an application base path. Safepay appends its own query parameter,
-    // so redirects must not start with a configured pathname or query string.
+    // Safepay appends its own query parameter, so use the configured origin
+    // without a pathname or query string.
     return new URL(configured).origin;
   } catch {
     throw new Error("APP_URL or NEXTAUTH_URL must be a valid absolute URL.");
@@ -92,8 +93,8 @@ function checkoutUrls(orderId: string): { redirectUrl: string; cancelUrl: string
   return {
     // Safepay appends `?tracker=...` itself, so keep the supplied URLs free
     // of query strings and encode our order id in the path instead.
-    redirectUrl: `${baseUrl}/nextshop/checkout/return/${encodeURIComponent(orderId)}`,
-    cancelUrl: `${baseUrl}/nextshop/checkout/cancel/${encodeURIComponent(orderId)}`,
+    redirectUrl: `${baseUrl}/checkout/return/${encodeURIComponent(orderId)}`,
+    cancelUrl: `${baseUrl}/checkout/cancel/${encodeURIComponent(orderId)}`,
   };
 }
 
@@ -125,7 +126,7 @@ async function createPendingOrder(
   // so it needs a bounded timeout above Prisma's five-second default.
   return prisma.$transaction(async (tx) => {
     const products = await tx.product.findMany({
-      where: { id: { in: lines.map((line) => line.productId) } },
+      where: { id: { in: lines.map((line) => line.productId) }, archived: false },
     });
     const productById = new Map(products.map((product) => [product.id, product]));
 
@@ -141,7 +142,7 @@ async function createPendingOrder(
       }
 
       const reserved = await tx.product.updateMany({
-        where: { id: product.id, inventory: { gte: line.quantity } },
+        where: { id: product.id, archived: false, inventory: { gte: line.quantity } },
         data: { inventory: { decrement: line.quantity } },
       });
       if (reserved.count !== 1) {
@@ -154,6 +155,19 @@ async function createPendingOrder(
       }
     }
 
+    let couponId: string | undefined;
+    let discountMinor = 0;
+    if (input.couponCode) {
+      const coupon = await tx.coupon.findUnique({ where: { code: input.couponCode.toUpperCase() } });
+      const discount = couponDiscount(coupon, totalMinor);
+      if (!coupon || discount === null) {
+        throw new CheckoutError("This coupon is invalid, expired, or does not meet the minimum order amount.", 400, "INVALID_COUPON");
+      }
+      couponId = coupon.id;
+      discountMinor = discount;
+      totalMinor -= discountMinor;
+    }
+
     const order = await tx.order.create({
       data: {
         orderNumber: createOrderNumber(),
@@ -162,6 +176,8 @@ async function createPendingOrder(
         paymentStatus: PaymentStatus.PENDING,
         total: fromMinorUnits(totalMinor),
         totalMinor,
+        couponId,
+        discountMinor,
         currency: "PKR",
         customerEmail: email,
         customerName: input.customerName,
@@ -402,6 +418,7 @@ function createConfirmationPayload(order: {
   customerName: string | null;
   currency: string;
   totalMinor: number;
+  discountMinor: number;
   items: Array<{ name: string | null; quantity: number; lineTotalMinor: number | null }>;
 }) {
   return {
@@ -409,6 +426,7 @@ function createConfirmationPayload(order: {
     customerName: order.customerName ?? "Customer",
     currency: order.currency,
     totalMinor: order.totalMinor,
+    discountMinor: order.discountMinor,
     items: order.items.map((item) => ({
       name: item.name ?? "Product",
       quantity: item.quantity,
@@ -652,7 +670,7 @@ export function isRetryableWebhookError(error: unknown): boolean {
 
 export async function getOrderStatusForUser(orderId: string, userId: string) {
   return prisma.order.findFirst({
-    where: { id: orderId, userId },
+    where: { userId, OR: [{ id: orderId }, { orderNumber: orderId }] },
     select: {
       id: true,
       orderNumber: true,

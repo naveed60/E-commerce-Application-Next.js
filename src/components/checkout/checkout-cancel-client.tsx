@@ -23,7 +23,7 @@ export function CheckoutCancelClient({ orderId }: { orderId: string | null }) {
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-zinc-500">
           No order has been confirmed. You can return to your cart whenever you’re ready to try again.
         </p>
-        <Link href="/nextshop/checkout" className="mt-8 inline-flex rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700">
+        <Link href="/checkout" className="mt-8 inline-flex rounded-xl bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700">
           Return to checkout
         </Link>
       </section>

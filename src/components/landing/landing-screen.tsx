@@ -1,92 +1,56 @@
 "use client";
 
-import Image from "next/image";
-import { ArrowRight, CircleEllipsis, Mail, ShoppingBag, Sparkles } from "lucide-react";
+/* Product images can come from the catalog or remote editorial photography. */
+/* eslint-disable @next/next/no-img-element */
+
+import Link from "next/link";
+import { Heart, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { PrimaryHeader } from "./primary-header";
-import { HeroSlider } from "./hero-slider";
-import { ProductGrid } from "./product-grid";
-import { Footer } from "./footer";
-import { type StorefrontProduct } from "@/types/product";
-import { toast } from "sonner";
+import { useCart } from "@/components/providers/cart-provider";
+import { useFavorites } from "@/components/providers/favorites-provider";
+import { formatPrice } from "@/lib/utils";
+import type { StorefrontProduct } from "@/types/product";
+import styles from "./storefront-design.module.css";
+import { PRODUCT_CATEGORY_VALUES, categoryLabel } from "@/lib/product-categories";
+import { StorefrontHeader, StorefrontFooter } from "./storefront-shell";
 
-type LandingScreenProps = { products: StorefrontProduct[]; databaseUnavailable?: boolean };
+type Props = { products: StorefrontProduct[]; databaseUnavailable?: boolean; initialCategory?: string };
 
-const categories = [
-  { name: "Electronics", image: "/shopkart/category-electronics.jpg" },
-  { name: "Fashion", image: "/shopkart/category-fashion.jpg" },
-  { name: "Home & Living", image: "/shopkart/category-home.jpg" },
-  { name: "Beauty", image: "/shopkart/category-beauty.jpg" },
-  { name: "Sports", image: "/shopkart/category-sports.jpg" },
-  { name: "Toys", image: "/shopkart/category-toys.jpg" },
-];
+const categoryImages: Record<string, string> = {
+  men: "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=500&q=85",
+  women: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=500&q=85",
+  kids: "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=500&q=85",
+  accessories: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=85",
+};
 
-export function LandingScreen({ products, databaseUnavailable = false }: LandingScreenProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [submittedSearch, setSubmittedSearch] = useState("");
-  const searchSuggestions = useMemo(() => Array.from(new Set(products.flatMap((product) => [product.name, ...product.tags]))).slice(0, 12), [products]);
-
-  return (
-    <div className="storefront min-h-screen bg-white">
-      <PrimaryHeader searchTerm={searchTerm} onSearchChange={(value) => { setSearchTerm(value); if (!value) setSubmittedSearch(""); }} onSearchSubmit={setSubmittedSearch} searchSuggestions={searchSuggestions} />
-      <main>
-        <HeroSlider />
-        <div className="shop-container px-4 lg:px-6">
-          {databaseUnavailable && <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">Live inventory is temporarily unavailable. Featured products are still available to browse.</p>}
-          <CategoryStrip />
-          <ProductGrid products={products} searchTerm={submittedSearch} />
-          <Promotions />
-          <Newsletter />
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
-function CategoryStrip() {
-  return (
-    <section aria-label="Popular categories" className="grid grid-cols-4 gap-4 py-7 sm:grid-cols-7 sm:gap-5">
-      {categories.map((category) => (
-        <a key={category.name} href={`#${category.name.toLowerCase().replaceAll(" ", "-")}`} className="group text-center">
-          <span className="relative mx-auto block aspect-square max-w-[112px] overflow-hidden rounded-full bg-[#f0f5fb] ring-1 ring-[#edf2f7] transition group-hover:-translate-y-1 group-hover:ring-[#b9dcff]">
-            <Image src={category.image} alt={category.name} fill sizes="112px" className="object-cover" />
-          </span>
-          <span className="mt-2.5 block text-[11px] font-bold text-[#101828] sm:text-sm">{category.name}</span>
-        </a>
-      ))}
-      <a href="#featured-products" className="group text-center">
-        <span className="mx-auto grid aspect-square max-w-[112px] place-items-center rounded-full bg-[#f0f5fb] text-[#101828] ring-1 ring-[#edf2f7] transition group-hover:-translate-y-1 group-hover:text-[#087df1]"><CircleEllipsis className="h-9 w-9" /></span>
-        <span className="mt-2.5 block text-[11px] font-bold text-[#101828] sm:text-sm">More</span>
-      </a>
+export function LandingScreen({ products, databaseUnavailable = false, initialCategory = "" }: Props) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState(initialCategory);
+  const [sort, setSort] = useState("latest");
+  const { addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const categories = PRODUCT_CATEGORY_VALUES;
+  const visible = useMemo(() => {
+    const search = query.trim().toLowerCase();
+    const result = products.filter((p) => (!category || p.category === category) && (!search || [p.name, p.description, p.category, ...p.tags].some((v) => v.toLowerCase().includes(search))));
+    if (sort === "low") result.sort((a, b) => a.price - b.price);
+    if (sort === "high") result.sort((a, b) => b.price - a.price);
+    return result;
+  }, [products, category, query, sort]);
+  return <main className={`${styles.storefront} min-h-screen overflow-x-hidden bg-[#fbfaf8] text-[#101414]`}>
+    <StorefrontHeader categories={categories} />
+    <section className="mx-auto grid max-w-[1320px] items-center gap-10 px-5 py-10 md:grid-cols-[.8fr_1.2fr] md:px-10 md:py-12">
+      <div className="order-2 md:order-1"><p className="text-xs font-bold uppercase tracking-[.3em] text-[#d9233f]">New collection</p><h1 className={`${styles.serif} mt-5 max-w-lg text-6xl leading-[.92] md:text-[5.7rem]`}>Everyday<br />Style for<br />Everyone</h1><p className="mt-7 max-w-md text-base leading-7 text-black/70">Trendy, comfortable and high-quality clothes for every occasion.</p><div className="mt-8 flex flex-wrap gap-4"><a href="#shop" className="rounded-full bg-[#06472f] px-7 py-4 text-sm font-bold text-white hover:bg-[#0a633f]">Shop Now</a><a href="#shop" className="rounded-full border border-black/60 px-7 py-4 text-sm font-bold hover:border-[#06472f] hover:text-[#06472f]">View Collection</a></div></div>
+      <div className="order-1 overflow-hidden rounded-[40px] md:order-2"><img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1400&q=90" alt="Woman in a burgundy fashion look" className="h-[430px] w-full object-cover md:h-[560px]" /></div>
     </section>
-  );
-}
-
-function Promotions() {
-  return (
-    <section className="grid gap-4 pb-6 md:grid-cols-2">
-      <div className="relative flex min-h-[190px] overflow-hidden rounded-xl bg-gradient-to-r from-[#bff5dd] to-[#86dfc0] p-7 sm:p-9">
-        <div className="relative z-10"><p className="text-2xl font-black leading-tight text-[#073e32]">Summer Sale<br /><span className="text-[#008a69]">Up to 50% OFF</span></p><a href="#featured-products" className="mt-5 inline-flex rounded-md bg-white px-6 py-2.5 text-sm font-bold text-[#071526] shadow-sm">Shop Now</a></div>
-        <Sparkles className="absolute -bottom-7 right-8 h-40 w-40 rotate-[-15deg] text-[#0aa981]/25" strokeWidth={1} />
-      </div>
-      <div className="relative flex min-h-[190px] overflow-hidden rounded-xl bg-gradient-to-r from-[#ffe0cb] to-[#ffc493] p-7 sm:p-9">
-        <div className="relative z-10"><p className="text-2xl font-black leading-tight text-[#071526]">Top Brands<br />Best Deals</p><a href="#featured-products" className="mt-5 inline-flex rounded-md bg-white px-6 py-2.5 text-sm font-bold text-[#071526] shadow-sm">Shop Now</a></div>
-        <ShoppingBag className="absolute -bottom-6 right-10 h-40 w-40 text-[#d67621]/55" strokeWidth={1.25} />
-      </div>
+    {categories.length > 0 && <section aria-label="Shop by category" className="mx-auto grid max-w-[1320px] gap-4 px-5 pb-16 sm:grid-cols-2 md:grid-cols-4 md:px-10">{categories.map((item) => {
+      const image = categoryImages[item.toLowerCase().split(/[-_ ]/)[0]] || products.find((p) => p.category === item)?.image;
+      return <Link key={item} href={`/collection/${encodeURIComponent(item)}`} className="group relative h-32 overflow-hidden rounded-3xl bg-[#52685d] text-left">{image && <><img src={image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" /></>}<span className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" /><span className={`${styles.serif} relative pl-7 text-2xl font-semibold text-white`}>{categoryLabel(item)}</span></Link>;
+    })}</section>}
+    <section id="shop" className="mx-auto max-w-[1320px] px-5 pb-20 md:px-10"><div className="mb-8"><p className="text-xs font-bold uppercase tracking-[.3em] text-[#d9233f]">New arrivals</p><h2 className={`${styles.serif} mt-2 text-5xl md:text-6xl`}>Latest Collection</h2></div>
+      {databaseUnavailable ? <p role="alert" className="rounded-xl bg-amber-50 p-5 text-sm text-amber-900">Products are temporarily unavailable. Please try again later.</p> : <><div className="mb-7 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center"><label className="flex items-center gap-2 rounded-full border border-black/15 bg-white px-4 py-2"><Search size={17} /><span className="sr-only">Search products</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products" className="w-full bg-transparent text-sm outline-none" /></label><div className="flex flex-1 flex-wrap gap-2"><button type="button" onClick={() => setCategory("")} aria-pressed={!category} className={`rounded-full px-4 py-2 text-xs font-bold ${!category ? "bg-[#06472f] text-white" : "bg-white text-black/70 ring-1 ring-black/10"}`}>All</button>{categories.map((item) => <button type="button" key={item} onClick={() => setCategory(item)} aria-pressed={category === item} className={`rounded-full px-4 py-2 text-xs font-bold ${category === item ? "bg-[#06472f] text-white" : "bg-white text-black/70 ring-1 ring-black/10"}`}>{categoryLabel(item)}</button>)}</div><label className="sr-only" htmlFor="store-sort">Sort products</label><select id="store-sort" value={sort} onChange={(event) => setSort(event.target.value)} className="rounded-full border border-black/15 bg-white px-4 py-2 text-xs font-bold"><option value="latest">Latest</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></div>
+      {visible.length ? <div className="grid gap-x-4 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">{visible.map((product) => <article key={product.id} className="group"><div className="relative aspect-[.82] overflow-hidden rounded-xl bg-[#eeeae5]"><Link href={`/products/${encodeURIComponent(product.id)}`} className="block h-full"><img src={product.image} alt={product.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /></Link><button type="button" onClick={() => toggleFavorite(product)} aria-pressed={isFavorite(product.id)} aria-label={`${isFavorite(product.id) ? "Remove" : "Add"} ${product.name} ${isFavorite(product.id) ? "from" : "to"} favorites`} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white/90"><Heart size={19} className={isFavorite(product.id) ? "fill-[#d9233f] text-[#d9233f]" : ""} /></button><button type="button" disabled={(product.inventory ?? 0) <= 0} onClick={() => addItem(product)} aria-label={`Add ${product.name} to bag`} className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full bg-[#06472f] text-white shadow-md hover:bg-[#0a633f] disabled:opacity-50"><Plus size={20} /></button></div><Link href={`/products/${encodeURIComponent(product.id)}`} className="mt-3 block"><h3 className="font-bold">{product.name}</h3><p className="mt-1 font-bold">{formatPrice(product.price)}</p>{(product.inventory ?? 0) <= 0 && <p className="mt-1 text-xs text-red-700">Out of stock</p>}<p className="mt-1 text-sm text-[#a36c00]" aria-label={`Rating ${product.rating} out of 5`}>★ {product.rating.toFixed(1)}</p></Link></article>)}</div> : <p className="rounded-xl bg-white p-8 text-center text-sm text-black/65">{products.length ? "No products match your search or category." : "No products are available yet."}</p>}</>}
     </section>
-  );
-}
-
-function Newsletter() {
-  return (
-    <section className="mb-8 flex flex-col items-center gap-5 rounded-xl bg-[#e4f2ff] p-6 sm:flex-row sm:p-8">
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#cce7ff] text-[#087df1]"><Mail className="h-7 w-7" /></span>
-      <div className="text-center sm:text-left"><h2 className="text-xl font-black text-[#071526]">Stay Updated</h2><p className="mt-1 text-sm text-[#5d6b7c]">Get the latest offers, new arrivals and exclusive deals.</p></div>
-      <form className="flex w-full overflow-hidden rounded-md bg-white sm:ml-auto sm:max-w-[450px]" onSubmit={(event) => { event.preventDefault(); toast.success("You’re subscribed to ShopKart updates!"); }}>
-        <input type="email" required placeholder="Enter your email" className="min-w-0 flex-1 px-4 py-3 text-sm outline-none" />
-        <button className="flex items-center gap-2 bg-[#087df1] px-5 text-sm font-bold text-white">Subscribe <ArrowRight className="hidden h-4 w-4 sm:block" /></button>
-      </form>
-    </section>
-  );
+    <StorefrontFooter />
+  </main>;
 }

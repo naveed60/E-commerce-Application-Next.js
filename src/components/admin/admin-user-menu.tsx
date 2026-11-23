@@ -95,7 +95,7 @@ export function AdminUserMenu({
           </div>
           <div className="p-2">
             <Link
-              href="/nextshop"
+              href="/"
               className="flex items-center justify-between rounded-2xl px-3 py-3 text-sm font-medium text-[var(--admin-text)] transition hover:bg-[var(--admin-bg-soft)]"
             >
               View storefront
