@@ -1,7 +1,6 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
-import { getOrderStatusForUser } from "@/lib/commerce/orders";
+import { checkoutIdentity } from "@/lib/commerce/checkout-identity";
+import { getOrderStatusForCustomer } from "@/lib/commerce/orders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,14 +9,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-  if (!userId) {
-    return NextResponse.json({ message: "Please sign in to view this order." }, { status: 401 });
-  }
-
+  const access = await checkoutIdentity();
   const { id } = await params;
-  const order = await getOrderStatusForUser(id, userId);
+  const order = await getOrderStatusForCustomer(id, access);
   if (!order) {
     return NextResponse.json({ message: "Order not found." }, { status: 404 });
   }
