@@ -10,5 +10,5 @@ export default async function CollectionPage({ params }: { params: Promise<{ cat
   if (LEGACY_CATEGORIES[category]) redirect(`/collection/${LEGACY_CATEGORIES[category]}`);
   if (!isProductCategory(category)) notFound();
   const products = await prisma.product.findMany({ where: { category, archived: false }, orderBy: { createdAt: "desc" } });
-  return <CollectionClient category={category} products={products.map((p) => ({ id: p.id, name: p.name, description: p.description, price: Number(p.price), image: p.image, tags: p.tags, rating: p.rating, featured: p.featured, category: p.category, inventory: p.inventory, createdAt: p.createdAt.toISOString() }))} />;
+  return <CollectionClient category={category} products={products.map((p) => ({ id: p.id, name: p.name, description: p.description, price: Number(p.price), image: p.image, tags: p.tags, rating: p.rating, featured: p.featured, category: p.category, hasVariants: p.hasVariants, inventory: p.inventory, createdAt: p.createdAt.toISOString() }))} />;
 }
