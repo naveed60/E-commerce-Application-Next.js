@@ -43,7 +43,7 @@ database named `nextshop`, or point `DATABASE_URL` at an existing empty database
 
 ### Safepay checkout
 
-The storefront includes an authenticated, hosted Safepay checkout at `/checkout`.
+The storefront includes a hosted Safepay checkout at `/checkout` with no login or registration required. Customers enter their name, email, phone, and delivery address; these details and product/price snapshots are saved on the order. Signed-in purchases remain linked to their account. Guest payment status and cancellation are authorized by a 30-day HttpOnly browser cookie; only its SHA-256 hash is stored on the order.
 
 1. Add the Safepay sandbox credentials, `APP_URL`, Resend credentials, and `CRON_SECRET` from `.env.example` to your local environment.
 2. Apply the commerce schema with `npm run db:migrate`.

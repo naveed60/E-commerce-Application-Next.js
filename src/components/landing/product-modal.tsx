@@ -54,6 +54,7 @@ export function ProductModal({ product, onClose }: Props) {
   }, []);
 
   const handleCart = () => {
+    if (product.hasVariants) { router.push(`/products/${encodeURIComponent(product.id)}`); return; }
     if (status === "authenticated") {
       addItem(product);
       toast.success(`${product.name} added to cart`);
@@ -175,7 +176,7 @@ export function ProductModal({ product, onClose }: Props) {
                 onClick={handleCart}
               >
                 <ShoppingBag className="h-4 w-4" />
-                Add to cart
+                {product.hasVariants ? "Choose options" : "Add to cart"}
               </Button>
               <button
                 type="button"

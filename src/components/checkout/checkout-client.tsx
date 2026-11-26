@@ -2,16 +2,17 @@
 
 import { FormEvent, useRef, useState } from "react";
 import Link from "next/link";
-import { LoaderCircle, LockKeyhole } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { Button } from "@/components/ui/button";
+import { PyramidLoader } from "@/components/ui/pyramid-loader";
 import { formatPrice, formatMinorPkr } from "@/lib/utils";
 
 type CheckoutResponse = {
   checkoutUrl: string;
 };
 
-export function CheckoutClient({ customerName }: { customerName: string }) {
+export function CheckoutClient({ customerName, customerEmail }: { customerName: string; customerEmail: string }) {
   const { items, total } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
     setError(null); setQuote(null); setQuoting(true);
     try {
       const code = couponCode.trim().toUpperCase();
-      const response = await fetch("/api/checkout/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, items: items.map((item) => ({ productId: item.id, quantity: item.quantity })) }) });
+      const response = await fetch("/api/checkout/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, items: items.map((item) => ({ productId: item.productId, variantId: item.variantId, quantity: item.quantity })) }) });
       const body = await response.json();
       if (!response.ok) { setError(body.message || "Unable to apply coupon."); return; }
       setQuote({ code, cart: cartSignature, discountMinor: body.discountMinor, totalMinor: body.totalMinor });
@@ -52,6 +53,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
 
     const payload = {
       idempotencyKey: key,
+      customerEmail: String(form.get("customerEmail") ?? "").trim(),
       customerName: String(form.get("customerName") ?? "").trim(),
       customerPhone: String(form.get("customerPhone") ?? "").trim(),
       couponCode: couponCode.trim() || undefined,
@@ -63,7 +65,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
         postalCode: String(form.get("postalCode") ?? "").trim() || undefined,
         country: "PK" as const,
       },
-      items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+      items: items.map((item) => ({ productId: item.productId, variantId: item.variantId, quantity: item.quantity })),
     };
 
     try {
@@ -87,7 +89,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
       window.location.assign(body.checkoutUrl);
     } catch {
       setError("Your connection was interrupted. Please try again.");
-      idempotencyKey.current = null;
+      // Reuse the key after an interrupted response to avoid duplicate orders.
     } finally {
       setIsSubmitting(false);
     }
@@ -124,6 +126,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
 
           <div className="mt-7 grid gap-5 sm:grid-cols-2">
             <Field label="Full name" name="customerName" defaultValue={customerName} required className="sm:col-span-2" />
+            <Field label="Email address" name="customerEmail" type="email" defaultValue={customerEmail} required className="sm:col-span-2" />
             <Field label="Phone number" name="customerPhone" placeholder="+923001234567" required />
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
               <p className="text-xs font-medium text-zinc-500">Country</p>
@@ -145,8 +148,8 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
             </p>
           )}
 
-          <Button type="submit" variant="primary" className="mt-8 w-full" disabled={isSubmitting}>
-            {isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+          <Button type="submit" variant="primary" className="mt-8 w-full gap-2" disabled={isSubmitting} aria-busy={isSubmitting}>
+            {isSubmitting ? <PyramidLoader size="xs" className="shrink-0" /> : null}
             {isSubmitting ? "Opening secure payment…" : validQuote ? `Pay ${formatMinorPkr(validQuote.totalMinor)} with Safepay` : `Pay ${formatPrice(total)} with Safepay`}
           </Button>
           <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
@@ -161,6 +164,7 @@ export function CheckoutClient({ customerName }: { customerName: string }) {
               <div key={item.id} className="flex items-start justify-between gap-4 text-sm">
                 <div>
                   <p className="font-medium text-zinc-800">{item.name}</p>
+                  <p className="mt-1 text-zinc-500">{[item.color, item.size].filter(Boolean).join(" / ")}</p>
                   <p className="mt-1 text-zinc-500">Qty {item.quantity}</p>
                 </div>
                 <p className="shrink-0 font-medium text-zinc-800">{formatPrice(item.price * item.quantity)}</p>
@@ -184,6 +188,7 @@ function Field({
   defaultValue,
   placeholder,
   required = false,
+  type = "text",
   className = "",
 }: {
   label: string;
@@ -191,6 +196,7 @@ function Field({
   defaultValue?: string;
   placeholder?: string;
   required?: boolean;
+  type?: "text" | "email";
   className?: string;
 }) {
   return (
@@ -198,6 +204,7 @@ function Field({
       <span className="mb-2 block text-sm font-medium text-zinc-700">{label}</span>
       <input
         name={name}
+        type={type}
         defaultValue={defaultValue}
         placeholder={placeholder}
         required={required}

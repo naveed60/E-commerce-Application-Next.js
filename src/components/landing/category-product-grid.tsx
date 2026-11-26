@@ -55,6 +55,7 @@ export function CategoryProductGrid({
   }
 
   const handleCart = (product: StorefrontProduct) => {
+    if (product.hasVariants) { router.push(`/products/${encodeURIComponent(product.id)}`); return; }
     if (status === "authenticated") {
       addItem(product);
       toast.success(`${product.name} added to cart`);

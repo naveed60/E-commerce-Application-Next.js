@@ -14,6 +14,7 @@ export default async function AdminEditProductPage({
 
   const product = await prisma.product.findUnique({
     where: { id, archived: false },
+    include: { colors: { where: { active: true }, orderBy: { position: "asc" } }, variants: { orderBy: { position: "asc" } } },
   });
 
   if (!product) {
@@ -35,6 +36,9 @@ export default async function AdminEditProductPage({
         mode="edit"
         productId={product.id}
         initialData={{
+          hasVariants: product.hasVariants,
+          colors: product.colors,
+          variants: product.variants.map((v) => ({ ...v, price: v.price === null ? null : Number(v.price) })),
           name: product.name,
           description: product.description,
           price: product.price.toNumber(),

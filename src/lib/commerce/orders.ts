@@ -10,6 +10,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { fromMinorUnits, toMinorUnits } from "./money";
 import { couponDiscount } from "./coupon";
+import { orderAccessWhere, type OrderAccess } from "./order-access";
 import {
   createSafepayCheckout,
   createSafepayHostedUrl,
@@ -22,10 +23,8 @@ const COMMERCE_TRANSACTION_OPTIONS = {
   timeout: 20_000,
 } as const;
 
-export type CheckoutLineInput = {
-  productId: string;
-  quantity: number;
-};
+import { collapseLines, resolveCartLine, type CheckoutLineInput } from "./cart-lines";
+export type { CheckoutLineInput } from "./cart-lines";
 
 export type ShippingAddressInput = {
   line1: string;
@@ -98,25 +97,17 @@ function checkoutUrls(orderId: string): { redirectUrl: string; cancelUrl: string
   };
 }
 
-function collapseLines(items: CheckoutLineInput[]): CheckoutLineInput[] {
-  const quantities = new Map<string, number>();
-  for (const item of items) {
-    quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
-  }
-  return [...quantities].map(([productId, quantity]) => {
-    if (quantity > 10) {
-      throw new CheckoutError("You can purchase a maximum of 10 units of each product per order.", 400, "QUANTITY_LIMIT");
-    }
-    return { productId, quantity };
-  });
-}
-
-async function createPendingOrder(
-  userId: string,
+export async function createPendingOrder(
+  access: OrderAccess,
   email: string,
   input: CheckoutInput,
 ): Promise<CreatedOrder> {
-  const lines = collapseLines(input.items);
+  if (!access.userId && !access.guestAccessHash) {
+    throw new CheckoutError("Checkout identity is missing. Please try again.", 403, "CHECKOUT_IDENTITY_REQUIRED");
+  }
+  let lines: CheckoutLineInput[];
+  try { lines = collapseLines(input.items); }
+  catch (error) { throw new CheckoutError((error as Error).message, 400, "QUANTITY_LIMIT"); }
   if (!lines.length) {
     throw new CheckoutError("Your cart is empty.", 400, "EMPTY_CART");
   }
@@ -127,10 +118,11 @@ async function createPendingOrder(
   return prisma.$transaction(async (tx) => {
     const products = await tx.product.findMany({
       where: { id: { in: lines.map((line) => line.productId) }, archived: false },
+      include: { variants: true, colors: true },
     });
     const productById = new Map(products.map((product) => [product.id, product]));
 
-    if (productById.size !== lines.length) {
+    if (productById.size !== new Set(lines.map((line) => line.productId)).size) {
       throw new CheckoutError("One or more products are no longer available.", 409, "PRODUCT_UNAVAILABLE");
     }
 
@@ -141,15 +133,25 @@ async function createPendingOrder(
         throw new CheckoutError("One or more products are no longer available.", 409, "PRODUCT_UNAVAILABLE");
       }
 
+      let resolved: ReturnType<typeof resolveCartLine>;
+      try { resolved = resolveCartLine(product, line); }
+      catch (error) { throw new CheckoutError((error as Error).message, 409, "VARIANT_UNAVAILABLE"); }
       const reserved = await tx.product.updateMany({
-        where: { id: product.id, archived: false, inventory: { gte: line.quantity } },
+        where: { id: product.id, archived: false, ...(product.hasVariants !== undefined ? { hasVariants: product.hasVariants } : {}), inventory: { gte: line.quantity } },
         data: { inventory: { decrement: line.quantity } },
       });
       if (reserved.count !== 1) {
         throw new CheckoutError(`${product.name} is no longer in stock.`, 409, "OUT_OF_STOCK");
       }
 
-      totalMinor += toMinorUnits(product.price) * line.quantity;
+      if (resolved.variant) {
+        const reservedVariant = await tx.productVariant.updateMany({
+          where: { id: resolved.variant.id, productId: product.id, active: true, inventory: { gte: line.quantity } },
+          data: { inventory: { decrement: line.quantity } },
+        });
+        if (reservedVariant.count !== 1) throw new CheckoutError(`${product.name}: the selected variant is no longer in stock.`, 409, "OUT_OF_STOCK");
+      }
+      totalMinor += toMinorUnits(resolved.price) * line.quantity;
       if (!Number.isSafeInteger(totalMinor)) {
         throw new CheckoutError("The order total is outside the supported range.", 400, "AMOUNT_OUT_OF_RANGE");
       }
@@ -171,7 +173,8 @@ async function createPendingOrder(
     const order = await tx.order.create({
       data: {
         orderNumber: createOrderNumber(),
-        userId,
+        userId: access.userId,
+        guestAccessHash: access.userId ? null : access.guestAccessHash,
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
         total: fromMinorUnits(totalMinor),
@@ -187,13 +190,15 @@ async function createPendingOrder(
         items: {
           create: lines.map((line) => {
             const product = productById.get(line.productId)!;
-            const unitMinor = toMinorUnits(product.price);
+            const resolved = resolveCartLine(product, line);
+            const unitMinor = toMinorUnits(resolved.price);
             return {
               productId: product.id,
               quantity: line.quantity,
-              price: product.price,
+              price: resolved.price,
               name: product.name,
-              image: product.image,
+              image: resolved.image,
+              ...(resolved.variant ? { variantId: resolved.variant.id, color: resolved.color?.name ?? null, size: resolved.variant.size || null, sku: resolved.variant.sku } : {}),
               lineTotalMinor: unitMinor * line.quantity,
             };
           }),
@@ -244,10 +249,14 @@ export async function releaseOrderInventory(orderId: string): Promise<boolean> {
     }
 
     for (const item of order.items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { inventory: { increment: item.quantity } },
-      });
+      // Take the product lock first, matching checkout and catalog edits.
+      await tx.product.update({ where: { id: item.productId }, data: { updatedAt: new Date() } });
+      if (item.variantId) {
+        const variant = await tx.productVariant.update({ where: { id: item.variantId }, data: { inventory: { increment: item.quantity } } });
+        if (variant.active) await tx.product.updateMany({ where: { id: item.productId, hasVariants: true }, data: { inventory: { increment: item.quantity } } });
+      } else {
+        await tx.product.updateMany({ where: { id: item.productId, hasVariants: false }, data: { inventory: { increment: item.quantity } } });
+      }
     }
     return true;
   }, COMMERCE_TRANSACTION_OPTIONS);
@@ -293,17 +302,23 @@ async function markCheckoutSetupFailure(
 }
 
 export async function createCheckoutSession(
-  userId: string,
+  access: OrderAccess,
   email: string,
   input: CheckoutInput,
 ): Promise<{ orderId: string; orderNumber: string; checkoutUrl: string; expiresAt: Date }> {
+  if (!access.userId && !access.guestAccessHash) {
+    throw new CheckoutError("Checkout identity is missing. Please try again.", 403, "CHECKOUT_IDENTITY_REQUIRED");
+  }
   const existing = await prisma.paymentAttempt.findUnique({
     where: { idempotencyKey: input.idempotencyKey },
     include: { order: true },
   });
 
   if (existing) {
-    if (existing.order.userId !== userId) {
+    const ownsOrder = existing.order.userId
+      ? existing.order.userId === access.userId
+      : Boolean(access.guestAccessHash && existing.order.guestAccessHash === access.guestAccessHash);
+    if (!ownsOrder) {
       throw new CheckoutError("This checkout request is not available.", 409, "IDEMPOTENCY_CONFLICT");
     }
     if (existing.status === PaymentAttemptStatus.PENDING && existing.tracker) {
@@ -335,12 +350,12 @@ export async function createCheckoutSession(
 
   let created: CreatedOrder;
   try {
-    created = await createPendingOrder(userId, email, input);
+    created = await createPendingOrder(access, email, input);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       // A double-click can race before the first transaction is visible. The
       // unique idempotency key means it is safe to resolve through the first.
-      return createCheckoutSession(userId, email, input);
+      return createCheckoutSession(access, email, input);
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028") {
       // Prisma rolled back the entire transaction, so the browser can safely
@@ -419,7 +434,7 @@ function createConfirmationPayload(order: {
   currency: string;
   totalMinor: number;
   discountMinor: number;
-  items: Array<{ name: string | null; quantity: number; lineTotalMinor: number | null }>;
+  items: Array<{ name: string | null; color?: string | null; size?: string | null; sku?: string | null; quantity: number; lineTotalMinor: number | null }>;
 }) {
   return {
     orderNumber: order.orderNumber,
@@ -428,7 +443,7 @@ function createConfirmationPayload(order: {
     totalMinor: order.totalMinor,
     discountMinor: order.discountMinor,
     items: order.items.map((item) => ({
-      name: item.name ?? "Product",
+      name: [item.name ?? "Product", item.color, item.size, item.sku].filter(Boolean).join(" / "),
       quantity: item.quantity,
       lineTotalMinor: item.lineTotalMinor ?? 0,
     })),
@@ -668,9 +683,9 @@ export function isRetryableWebhookError(error: unknown): boolean {
   return error instanceof RetryableWebhookError;
 }
 
-export async function getOrderStatusForUser(orderId: string, userId: string) {
+export async function getOrderStatusForCustomer(orderId: string, access: OrderAccess) {
   return prisma.order.findFirst({
-    where: { userId, OR: [{ id: orderId }, { orderNumber: orderId }] },
+    where: { AND: [orderAccessWhere(access), { OR: [{ id: orderId }, { orderNumber: orderId }] }] },
     select: {
       id: true,
       orderNumber: true,
@@ -684,12 +699,12 @@ export async function getOrderStatusForUser(orderId: string, userId: string) {
   });
 }
 
-export async function cancelPendingOrderForUser(orderId: string, userId: string): Promise<boolean> {
+export async function cancelPendingOrderForCustomer(orderId: string, access: OrderAccess): Promise<boolean> {
   const cancelled = await prisma.$transaction(async (tx) => {
     const result = await tx.order.updateMany({
       where: {
         id: orderId,
-        userId,
+        ...orderAccessWhere(access),
         status: OrderStatus.PENDING,
         paymentStatus: PaymentStatus.PENDING,
       },

@@ -1,8 +1,10 @@
+import { checkoutLineSchema } from "@/lib/commerce/cart-lines";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { createGuestToken, guestTokenHash, GUEST_CHECKOUT_COOKIE, GUEST_CHECKOUT_MAX_AGE } from "@/lib/commerce/order-access";
 import { createCheckoutSession, isCheckoutError } from "@/lib/commerce/orders";
 
 export const runtime = "nodejs";
@@ -10,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 const checkoutSchema = z.object({
   idempotencyKey: z.string().min(16).max(128),
+  customerEmail: z.string().trim().email().max(254),
   customerName: z.string().trim().min(2).max(100),
   customerPhone: z.string().trim().regex(/^\+?[0-9]{8,15}$/, "Use an international phone number."),
   couponCode: z.string().trim().max(40).regex(/^[a-zA-Z0-9_-]*$/).optional(),
@@ -23,10 +26,7 @@ const checkoutSchema = z.object({
   }),
   items: z
     .array(
-      z.object({
-        productId: z.string().min(1).max(128),
-        quantity: z.number().int().min(1).max(10),
-      }),
+      checkoutLineSchema,
     )
     .min(1)
     .max(20),
@@ -55,12 +55,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Invalid checkout origin." }, { status: 403 });
   }
 
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-  if (!userId) {
-    return NextResponse.json({ message: "Please sign in before checking out." }, { status: 401 });
-  }
-
   const json = await request.json().catch(() => null);
   const parsed = checkoutSchema.safeParse(json);
   if (!parsed.success) {
@@ -70,16 +64,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true },
-  });
-  if (!user) {
-    return NextResponse.json({ message: "Your account is unavailable." }, { status: 401 });
+  const [session, cookieStore] = await Promise.all([getServerSession(authOptions), cookies()]);
+  const userId = session?.user?.id || null;
+  let token = cookieStore.get(GUEST_CHECKOUT_COOKIE)?.value;
+  if (!userId && !guestTokenHash(token)) token = createGuestToken();
+  if (!userId && token) {
+    // Set before creating the order, including on recoverable payment failures,
+    // so a retry remains bound to the same guest and idempotency key.
+    cookieStore.set(GUEST_CHECKOUT_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: GUEST_CHECKOUT_MAX_AGE,
+    });
   }
+  const access = { userId, guestAccessHash: guestTokenHash(token) };
 
   try {
-    const checkout = await createCheckoutSession(userId, user.email, parsed.data);
+    const checkout = await createCheckoutSession(access, parsed.data.customerEmail, parsed.data);
     return NextResponse.json(
       {
         orderId: checkout.orderId,

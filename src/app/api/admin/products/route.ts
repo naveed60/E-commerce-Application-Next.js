@@ -7,7 +7,11 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRODUCT_CATEGORY_VALUES } from "@/lib/product-categories";
 
+import { variantFields, variantConfigurationSchema } from "@/lib/product-variants";
+import { saveProductVariants } from "@/lib/save-product-variants";
+
 const productCreateSchema = z.object({
+  ...variantFields,
   name: z.string().min(1),
   description: z.string().min(1),
   image: z.string().min(1),
@@ -60,25 +64,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const productData = productCreateSchema.parse(body);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma.product.create as any)({
-      data: {
-        name: productData.name,
-        description: productData.description,
-        image: productData.image,
-        price: new Prisma.Decimal(productData.price),
-        category: productData.category,
-        tags: productData.tags,
-        inventory: productData.inventory,
-        featured: productData.featured,
-        rating: productData.rating,
-      },
-    });
+    const configuration = variantConfigurationSchema.parse(productData);
+    await prisma.$transaction(async (tx) => {
+      const { colors, variants, ...data } = productData;
+      void colors; void variants;
+      const product = await tx.product.create({ data: { ...data, price: new Prisma.Decimal(data.price) } });
+      await saveProductVariants(tx, product.id, configuration);
+    }, { timeout: 20000 });
 
     return NextResponse.json({ message: "Product created" }, { status: 201 });
   } catch (error) {
     console.error(error);
 
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ message: "A SKU or variant already exists. Use unique SKUs." }, { status: 409 });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

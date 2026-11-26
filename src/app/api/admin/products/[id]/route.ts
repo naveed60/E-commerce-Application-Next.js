@@ -7,8 +7,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRODUCT_CATEGORY_VALUES } from "@/lib/product-categories";
 
+import { variantConfigurationSchema } from "@/lib/product-variants";
+import { saveProductVariants } from "@/lib/save-product-variants";
+
 const productUpdateSchema = z
   .object({
+    hasVariants: z.boolean().optional(),
+    colors: variantConfigurationSchema.shape.colors.optional(),
+    variants: variantConfigurationSchema.shape.variants.optional(),
     name: z.string().min(1).optional(),
     description: z.string().min(1).optional(),
     image: z.string().min(1).optional(),
@@ -83,18 +89,25 @@ export async function PATCH(
       updateData.rating = productData.rating;
     }
 
-    const updated = await prisma.product.updateMany({
-      where: { id: productId, archived: false },
-      data: updateData,
-    });
-    if (updated.count === 0) {
-      return NextResponse.json({ message: "Product not found" }, { status: 404 });
-    }
+    const configuration = productData.hasVariants !== undefined || productData.colors !== undefined || productData.variants !== undefined
+      ? variantConfigurationSchema.parse(productData) : undefined;
+    const updated = await prisma.$transaction(async (tx) => {
+      const existing = await tx.product.findUnique({ where: { id: productId, archived: false } });
+      if (!existing) return { count: 0 };
+      if (!configuration && existing.hasVariants) delete updateData.inventory;
+      const result = await tx.product.updateMany({ where: { id: productId, archived: false }, data: { ...updateData, ...(configuration ? { hasVariants: configuration.hasVariants } : {}) } });
+      if (configuration) await saveProductVariants(tx, productId, configuration);
+      return result;
+    }, { timeout: 20000 });
+    if (updated.count === 0) return NextResponse.json({ message: "Product not found" }, { status: 404 });
 
     return NextResponse.json({ message: "Product updated" }, { status: 200 });
   } catch (error) {
     console.error(error);
 
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ message: "A SKU or combination already exists. Use unique SKUs." }, { status: 409 });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
