@@ -11,6 +11,9 @@ import { PRODUCT_CATEGORIES } from "@/lib/product-categories";
 
 import type { AdminProductFormInitialData } from "@/types/admin-product";
 
+import { ProductVariantEditor, type VariantFormValue } from "./product-variant-editor";
+import { variantConfigurationSchema } from "@/lib/product-variants";
+
 type ProductFormState = {
   name: string;
   description: string;
@@ -80,6 +83,12 @@ export function AdminProductForm({
     buildInitialState(initialData),
   );
 
+  const initialVariants = (): VariantFormValue => ({ hasVariants: initialData?.hasVariants ?? false, colors: initialData?.colors ?? [], variants: initialData?.variants ?? [] });
+  const [variantForm, setVariantForm] = useState<VariantFormValue>(initialVariants);
+  const [variantsPending, setVariantsPending] = useState(false);
+  const [uploadingVariants, setUploadingVariants] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
+
   const formTitle = useMemo(
     () => (mode === "edit" ? "Update product" : "Add a new product"),
     [mode],
@@ -129,6 +138,9 @@ export function AdminProductForm({
   const handleClear = () => {
     setProductForm(buildInitialState(initialData));
     setUploadError(null);
+    setVariantForm(initialVariants());
+    setVariantsPending(false);
+    setEditorKey((key) => key + 1);
   };
 
   return (
@@ -160,9 +172,12 @@ export function AdminProductForm({
         className="mt-6 space-y-4"
         onSubmit={async (event) => {
           event.preventDefault();
+          if (uploadingVariants || uploadingImage) return;
+          if (variantForm.hasVariants && variantsPending) { toast.error("Generate / update combinations before saving your color or size changes."); return; }
           setSubmittingProduct(true);
 
           try {
+            const configuration = variantConfigurationSchema.parse({ ...variantForm, colors: variantForm.colors.map((c) => ({ ...c, images: c.images.map((url) => url.trim()).filter(Boolean) })) });
             const tags = productForm.tags
               .split(",")
               .map((tag) => tag.trim())
@@ -181,6 +196,7 @@ export function AdminProductForm({
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
+                  ...configuration,
                   name: productForm.name,
                   description: productForm.description,
                   price: parseFloat(productForm.price),
@@ -343,7 +359,8 @@ export function AdminProductForm({
               type="number"
               min={0}
               required
-              value={productForm.inventory}
+              disabled={variantForm.hasVariants}
+              value={variantForm.hasVariants ? variantForm.variants.reduce((sum, v) => sum + (v.active ? v.inventory : 0), 0) : productForm.inventory}
               onChange={(event) =>
                 setProductForm((prev) => ({
                   ...prev,
@@ -354,6 +371,8 @@ export function AdminProductForm({
             />
           </label>
         </div>
+
+        <ProductVariantEditor key={editorKey} value={variantForm} onChange={setVariantForm} basePrice={Number(productForm.price)} onUploading={setUploadingVariants} onPending={setVariantsPending} />
 
         <label className={adminLabelClass}>
           Tags (comma separated)
@@ -409,7 +428,7 @@ export function AdminProductForm({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="submit"
-            disabled={submittingProduct}
+            disabled={submittingProduct || uploadingImage || uploadingVariants}
             className="min-w-32 bg-[var(--admin-accent)] text-white shadow-[0_10px_24px_var(--admin-ring)] hover:bg-[var(--admin-accent-strong)]"
           >
             {submittingProduct
