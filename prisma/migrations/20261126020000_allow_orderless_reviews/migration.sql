@@ -1,0 +1,1 @@
+ALTER TABLE "ProductReview" ALTER COLUMN "orderId" DROP NOT NULL;
