@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Locally uploaded product images (uploads are stored under public/ in development)
+/public/uploads/
+
 # production
 /build
 
