@@ -1,3 +1,4 @@
+import type { ProductColor, ProductVariant } from "./product";
 export type AdminProductSummary = {
   id: string;
   name: string;
@@ -13,6 +14,9 @@ export type AdminProductSummary = {
 };
 
 export type AdminProductFormInitialData = {
+  hasVariants?: boolean;
+  colors?: ProductColor[];
+  variants?: ProductVariant[];
   name: string;
   description: string;
   price: number;

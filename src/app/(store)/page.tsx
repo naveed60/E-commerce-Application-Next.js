@@ -28,6 +28,7 @@ export default async function NextShopPage() {
     rating: product.rating,
     featured: product.featured,
     category: product.category ?? "",
+    hasVariants: product.hasVariants,
     inventory: product.inventory,
     createdAt: product.createdAt.toISOString(),
   }));
