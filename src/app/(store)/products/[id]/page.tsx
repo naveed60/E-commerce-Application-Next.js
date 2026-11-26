@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ProductReviews, RelatedProducts } from "@/components/landing/product-detail-sections";
 import { ProductDetailClient } from "@/components/landing/product-detail-client";
 import { categoryLabel as getCategoryLabel } from "@/lib/product-categories";
 import { getValidImageUrl } from "@/lib/utils";
@@ -13,11 +15,13 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = await (prisma.product.findUnique as any)({ where: { id, archived: false } });
+  const raw = await prisma.product.findUnique({ where: { id, archived: false }, include: { colors: { where: { active: true }, orderBy: { position: "asc" } }, variants: { where: { active: true }, orderBy: { position: "asc" } } } });
   if (!raw) return notFound();
 
   const product = {
+    hasVariants: raw.hasVariants,
+    colors: raw.colors,
+    variants: raw.variants.map((v) => ({ ...v, price: v.price === null ? null : Number(v.price) })),
     id: raw.id,
     name: raw.name,
     description: raw.description,
@@ -31,40 +35,21 @@ export default async function ProductDetailPage({
     createdAt: (raw.createdAt as Date).toISOString(),
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const relatedRaw = await (prisma.product.findMany as any)({
-    where: { category: product.category, archived: false, NOT: { id: product.id } },
-    take: 4,
-    orderBy: { createdAt: "desc" },
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const related = relatedRaw.map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    price: Number(p.price),
-    image: p.image,
-    tags: p.tags as string[],
-    rating: p.rating as number,
-    featured: p.featured as boolean,
-    category: (p.category as string) ?? "",
-    inventory: p.inventory as number,
-    createdAt: (p.createdAt as Date).toISOString(),
-  }));
-
-  const reviews = await prisma.productReview.findMany({ where: { productId: product.id, visible: true }, orderBy: { createdAt: "desc" }, select: { id: true, rating: true, comment: true, user: { select: { name: true } } } });
-
   const categoryLabel = getCategoryLabel(product.category);
   const validImage = getValidImageUrl(product.image);
 
   return (
     <ProductDetailClient
       product={product}
-      related={related}
       categoryLabel={categoryLabel}
       validImage={validImage}
-      reviews={reviews}
-    />
+    >
+      <Suspense fallback={<p role="status" className="mt-20 text-sm text-black/60">Loading customer reviews…</p>}>
+        <ProductReviews productId={id} />
+      </Suspense>
+      <Suspense fallback={<p role="status" className="mt-20 text-sm text-black/60">Loading related products…</p>}>
+        <RelatedProducts productId={id} category={product.category} />
+      </Suspense>
+    </ProductDetailClient>
   );
 }
