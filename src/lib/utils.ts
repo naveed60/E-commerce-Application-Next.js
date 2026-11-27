@@ -1,26 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
+import { isAllowedImageHost } from "./image-hosts";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
-}
-
-const allowedImageHosts = new Set([
-  "images.unsplash.com",
-  "www.bopuqilamur.org.uk",
-  "img.freepik.com",
-]);
-
-const allowedImageHostSuffixes = [".public.blob.vercel-storage.com"];
-
-function isAllowedImageHost(hostname: string): boolean {
-  if (allowedImageHosts.has(hostname)) {
-    return true;
-  }
-
-  return allowedImageHostSuffixes.some(
-    (suffix) =>
-      hostname === suffix.slice(1) || hostname.endsWith(suffix),
-  );
 }
 
 export function formatPrice(amount: number): string {
@@ -38,10 +20,11 @@ export function formatMinorPkr(amount: number): string {
 
 export function getValidImageUrl(src: string): string | null {
   if (!src) return null;
-  if (src.startsWith("/")) return src;
+  if (src.includes("\\") || /[\u0000-\u001f]/.test(src)) return null;
+  if (src.startsWith("/") && !src.startsWith("//")) return src;
   try {
     const url = new URL(src);
-    return isAllowedImageHost(url.hostname) ? src : null;
+    return url.protocol === "https:" && !url.username && !url.password && !url.port && isAllowedImageHost(url.hostname) ? src : null;
   } catch {
     return null;
   }

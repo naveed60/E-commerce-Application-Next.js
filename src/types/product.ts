@@ -9,6 +9,7 @@ export type StorefrontProduct = {
   image: string;
   tags: string[];
   rating: number;
+  reviewCount?: number;
   featured: boolean;
   category: string;
   inventory?: number;

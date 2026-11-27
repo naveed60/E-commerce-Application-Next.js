@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 
 import { authOptions } from "@/lib/auth";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { PRIVATE_ROBOTS } from "@/lib/seo";
 
 export const metadata = {
   title: "Drape & Line Admin",
+  robots: PRIVATE_ROBOTS,
 };
 
 export default async function AdminLayout({

@@ -1,22 +1,40 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getProduct, getProductRating } from "@/lib/catalog";
 import { ProductReviews, RelatedProducts } from "@/components/landing/product-detail-sections";
 import { ProductDetailClient } from "@/components/landing/product-detail-client";
 import { categoryLabel as getCategoryLabel } from "@/lib/product-categories";
 import { getValidImageUrl } from "@/lib/utils";
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbData, pageMetadata, productPath } from "@/lib/seo";
+import { productStructuredData } from "@/lib/product-seo";
+import type { SearchParams } from "@/lib/catalog-params";
+import { ProductLoading } from "@/components/landing/route-loading";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> };
 
-  const raw = await prisma.product.findUnique({ where: { id, archived: false }, include: { colors: { where: { active: true }, orderBy: { position: "asc" } }, variants: { where: { active: true }, orderBy: { position: "asc" } } } });
-  if (!raw) return notFound();
+export async function generateMetadata({ params, searchParams }: Props) {
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) notFound();
+  const { variant: variantId } = await searchParams;
+  const variant = product.variants.find((v) => v.id === variantId);
+  const color = product.colors.find((c) => c.id === variant?.colorId);
+  const description = product.description.replace(/\s+/g, " ").trim() || `Explore ${product.name.trim()} at Drape & Line. View product details, available options and current pricing in PKR.`;
+  return pageMetadata({ title: product.name, description: description.length > 160 ? `${description.slice(0, 157)}…` : description,
+    path: productPath(id), image: getValidImageUrl(color?.images[0] ?? product.image) });
+}
+
+type ProductRecord = NonNullable<Awaited<ReturnType<typeof getProduct>>>;
+
+async function ProductContent({ id, raw, initialVariantId }: {
+  id: string;
+  raw: ProductRecord;
+  initialVariantId?: string;
+}) {
+  const summary = await getProductRating(id);
 
   const product = {
     hasVariants: raw.hasVariants,
@@ -28,7 +46,7 @@ export default async function ProductDetailPage({
     price: Number(raw.price),
     image: raw.image,
     tags: raw.tags as string[],
-    rating: raw.rating as number,
+    ...summary,
     featured: raw.featured as boolean,
     category: (raw.category as string) ?? "",
     inventory: raw.inventory as number,
@@ -39,7 +57,12 @@ export default async function ProductDetailPage({
   const validImage = getValidImageUrl(product.image);
 
   return (
+    <>
+    <JsonLd data={productStructuredData(product)} />
+    <JsonLd data={breadcrumbData([{ name: "Home", path: "/" }, ...(product.category ? [{ name: categoryLabel, path: `/collection/${encodeURIComponent(product.category)}` }] : []), { name: product.name, path: productPath(id) }])} />
     <ProductDetailClient
+      key={`${id}:${initialVariantId ?? "default"}`}
+      initialVariantId={initialVariantId}
       product={product}
       categoryLabel={categoryLabel}
       validImage={validImage}
@@ -51,5 +74,19 @@ export default async function ProductDetailPage({
         <RelatedProducts productId={id} category={product.category} />
       </Suspense>
     </ProductDetailClient>
+    </>
   );
+}
+
+export default async function ProductDetailPage({ params, searchParams }: Props) {
+  const { id } = await params;
+  const raw = await getProduct(id);
+  if (!raw) notFound();
+
+  const { variant: variantId } = await searchParams;
+  const initialVariantId = typeof variantId === "string" && raw.variants.some((v) => v.id === variantId) ? variantId : undefined;
+
+  return <Suspense fallback={<ProductLoading />}>
+    <ProductContent id={id} raw={raw} initialVariantId={initialVariantId} />
+  </Suspense>;
 }
