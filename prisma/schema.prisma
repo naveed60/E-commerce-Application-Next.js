@@ -52,6 +52,9 @@ model Product {
   cartItems  CartItem[]
   orderItems OrderItem[]
   reviews ProductReview[]
+
+  @@index([archived, category, createdAt, id])
+  @@index([archived, createdAt, id])
 }
 
 model ProductColor {

@@ -1,42 +1,15 @@
 import { LandingScreen } from "@/components/landing/landing-screen";
-import { prisma } from "@/lib/prisma";
+import { getHomeProducts } from "@/lib/catalog";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl, pageMetadata, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+export const metadata = pageMetadata({ title: "Clothing & Accessories Online in Pakistan", description: SITE_DESCRIPTION, path: "/" });
 
 export default async function NextShopPage() {
-  let products: Awaited<ReturnType<typeof prisma.product.findMany>> = [];
-  let databaseUnavailable = false;
-
-  try {
-    products = await prisma.product.findMany({
-      where: { archived: false },
-      orderBy: { createdAt: "desc" },
-    });
-  } catch (error) {
-    databaseUnavailable = true;
-    console.error("[storefront] Unable to load products from the database.", error);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const serializedProducts = products.map((product: any) => ({
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: Number(product.price),
-    image: product.image,
-    tags: product.tags,
-    rating: product.rating,
-    featured: product.featured,
-    category: product.category ?? "",
-    hasVariants: product.hasVariants,
-    inventory: product.inventory,
-    createdAt: product.createdAt.toISOString(),
-  }));
-
-  return (
-      <LandingScreen
-        products={serializedProducts}
-        databaseUnavailable={databaseUnavailable}
-      />
-  );
+  const products = await getHomeProducts();
+  return <>
+    <JsonLd data={{ "@context": "https://schema.org", "@type": "OnlineStore", "@id": absoluteUrl("/#organization"), name: SITE_NAME, url: absoluteUrl("/"), description: SITE_DESCRIPTION }} />
+    <LandingScreen products={products} />
+  </>;
 }

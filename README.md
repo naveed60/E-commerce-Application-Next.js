@@ -92,3 +92,71 @@ prisma/
 - Expand admin widgets with real analytics using `prisma` queries once production data exists.
 - Connect product grid to live database reads or headless CMS feeds.
 # NEXT-js-store
+
+### SEO and storefront performance
+
+The public SEO origin defaults to `https://my-store-next-js.vercel.app`, independently
+of local checkout/authentication URLs. Set `SITE_URL` to an absolute HTTPS origin
+when moving to a custom domain. Canonical URLs, social links, structured data, and
+sitemaps all use this origin.
+
+Production pages are indexable by default. Development, localhost origins, and
+Vercel previews are excluded automatically. Set `INDEXING_ENABLED=false` for a
+self-hosted staging deployment. A preview with production mode also needs this
+setting unless `VERCEL_ENV=preview` is present. Rebuild after changing these
+settings because static pages and robots metadata are generated at build time.
+
+- Submit `/sitemap-index.xml` to Search Console. It references `/sitemap.xml`
+  for public content and `/products/sitemap/0.xml` (and further shards) for
+  products, at most 10,000 products per shard. Archived products, empty
+  collections, utility pages, and search/sort states are excluded.
+- Optionally set `GOOGLE_SITE_VERIFICATION` to the Search Console HTML verification
+  token. Domain verification through DNS can be used without an app token.
+- `/shop` and collection routes render 24 products per page with ordinary HTML
+  search forms and pagination links. Each page has its own canonical URL;
+  search/sort results are `noindex`. The homepage renders only 12 new arrivals.
+- Catalog and product routes validate page/product existence before entering
+  route-local loading fallbacks. Slower catalog results and product details can
+  stream behind skeleton UI without turning invalid URLs into HTTP 200 responses.
+- Product metadata and page rendering share request-memoized Prisma loaders.
+  Public stock and prices are not cached across requests. Checkout continues to
+  validate the price and reserve stock independently.
+- Displayed star ratings and structured-data aggregates use visible customer
+  reviews, not the editable legacy product rating field. Products with no
+  published reviews show no aggregate rating.
+- Variant links use `/products/<id>?variant=<variant-id>` and restore the matching
+  options, image, stock, and price. All variants share the parent canonical URL.
+  JSON-LD includes only active variants and their actual SKUs and offers.
+- Product, collection, homepage, and related-product images use responsive Next
+  Image delivery, reserved aspect ratios, and lazy loading. Hero and main product
+  images load eagerly with high fetch priority. Add a trusted host in
+  `src/lib/image-hosts.ts` when introducing another image provider; the same
+  allowlist configures validation and the optimizer.
+- Auth, admin, checkout/payment results, and order tracking have indexing
+  exclusions. Authentication and order authorization continue to protect data;
+  crawler directives are not access controls.
+- Former starter category edits are marked as unavailable and `noindex`.
+  Public section pages use Drape & Line branding. Existing product URLs are
+  retained; permanent legacy category redirects use 308 responses.
+
+Before deployment, review actual product descriptions/photos, business contact
+information, and delivery/returns policies. No manufacturer identifiers, product
+specifications, review counts, shipping fees, or analytics account IDs are invented.
+Search Console submission, DNS/hosting redirects for a future custom domain,
+Merchant Center eligibility/feed setup, and off-page outreach remain account or
+business tasks. Changing the default deployment domain requires corresponding
+`SITE_URL`, checkout, and authentication configuration.
+
+Validation:
+
+```bash
+npm run type-check
+npm run db:migrate # apply the additive catalog indexes before deploying
+npm run build
+node --import tsx tests/seo.test.ts
+# Against a locally started production build:
+node scripts/verify-seo.mjs http://127.0.0.1:3104
+```
+
+Real-user Core Web Vitals and search indexing must be checked after deployment;
+source changes and local tests cannot establish field performance or rankings.
